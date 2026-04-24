@@ -6,6 +6,7 @@ const app = express();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const PORT = Number(process.env.PORT || 3000);
 app.use(express.json());
+app.use(express.static("public"));
 
 function buildMockReply(userMessage) {
   return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).\n\nВаш вопрос: "${userMessage}"\n\nБазовый безопасный план:\n1) Проверьте, сыт ли малыш и сухой ли подгузник.\n2) Снизьте стимуляцию: приглушите свет и звук.\n3) Используйте короткий успокаивающий ритуал (укачивание, белый шум, спокойный голос).\n4) Если плач необычный или длительный, обратитесь к педиатру.`;
@@ -76,11 +77,13 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-app.get("/", (_req, res) => {
+app.get("/api", (_req, res) => {
   res.json({
     name: "Parent AI Agent API",
     status: "running",
     endpoints: {
+      ui: "GET /",
+      api: "GET /api",
       health: "GET /health",
       chat: "POST /chat"
     }

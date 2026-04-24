@@ -28,7 +28,9 @@ Server runs at `http://localhost:3000`.
 
 ## Endpoints
 
+- `GET /` - web UI for chatting with assistant.
 - `GET /health` - basic health check.
+- `GET /api` - API metadata.
 - `POST /chat` - accepts JSON `{ "message": "..." }`.
 
 ### Example request
