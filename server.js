@@ -9,15 +9,15 @@ app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
 
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({
-        error: "Missing OPENAI_API_KEY environment variable."
-      });
-    }
-
     if (!userMessage || typeof userMessage !== "string") {
       return res.status(400).json({
         error: "Field \"message\" must be a non-empty string."
+      });
+    }
+
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "Missing OPENAI_API_KEY environment variable."
       });
     }
 
