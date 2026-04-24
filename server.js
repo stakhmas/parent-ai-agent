@@ -2,37 +2,75 @@ import express from "express";
 import fetch from "node-fetch";
 
 const app = express();
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 app.use(express.json());
 
 app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
+  try {
+    const userMessage = req.body.message;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer YOUR_OPENAI_API_KEY`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Ты — заботливый помощник для родителей детей 0-3 лет.
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "Missing OPENAI_API_KEY environment variable."
+      });
+    }
+
+    if (!userMessage || typeof userMessage !== "string") {
+      return res.status(400).json({
+        error: "Field \"message\" must be a non-empty string."
+      });
+    }
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Ты — заботливый помощник для родителей детей 0-3 лет.
 Не давай медицинских диагнозов.
 Объясняй просто и спокойно.
 Давай практические советы.`
-        },
-        {
-          role: "user",
-          content: userMessage
-        }
-      ]
-    })
-  });
+          },
+          {
+            role: "user",
+            content: userMessage
+          }
+        ]
+      })
+    });
 
-  const data = await response.json();
-  res.json({ reply: data.choices[0].message.content });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data?.error?.message || "OpenAI API request failed."
+      });
+    }
+
+    const reply = data?.choices?.[0]?.message?.content;
+    if (!reply) {
+      return res.status(502).json({
+        error: "OpenAI API returned an unexpected response format."
+      });
+    }
+
+    return res.json({ reply });
+  } catch (error) {
+    return res.status(500).json({
+      error: "Unexpected server error.",
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true });
 });
 
 app.listen(3000, () => {
