@@ -76,6 +76,17 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+app.get("/", (_req, res) => {
+  res.json({
+    name: "Parent AI Agent API",
+    status: "running",
+    endpoints: {
+      health: "GET /health",
+      chat: "POST /chat"
+    }
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
