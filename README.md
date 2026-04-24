@@ -10,9 +10,15 @@
 
    npm install
 
-2. Set your OpenAI API key:
+2. Configure environment variables:
 
-   export OPENAI_API_KEY="your_api_key_here"
+   cp .env.example .env
+
+   Then (optional) set your OpenAI API key in `.env`:
+
+   OPENAI_API_KEY=your_api_key_here
+
+   If `OPENAI_API_KEY` is not set, the app returns a local mock reply from `/chat`.
 
 3. Start the server:
 
