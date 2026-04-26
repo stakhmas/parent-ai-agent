@@ -14,9 +14,8 @@ function buildMockReply(userMessage) {
 
 app.post("/chat", async (req, res) => {
   try {
-    const userMessage = req.body.message;
-
-    if (!userMessage || typeof userMessage !== "string") {
+    const userMessage = req.body?.message;
+    if (typeof userMessage !== "string" || !userMessage.trim()) {
       return res.status(400).json({
         error: "Field \"message\" must be a non-empty string."
       });
@@ -28,7 +27,6 @@ app.post("/chat", async (req, res) => {
         reply: buildMockReply(userMessage)
       });
     }
-
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -54,7 +52,6 @@ app.post("/chat", async (req, res) => {
     });
 
     const data = await response.json();
-
     if (!response.ok) {
       return res.status(response.status).json({
         error: data?.error?.message || "OpenAI API request failed."
