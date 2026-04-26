@@ -2,10 +2,17 @@ import express from "express";
 import fetch from "node-fetch";
 
 const app = express();
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 app.use(express.json());
 
 app.post("/chat", async (req, res) => {
   try {
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "Missing OPENAI_API_KEY environment variable."
+      });
+    }
+
     const userMessage = req.body?.message;
     if (typeof userMessage !== "string" || !userMessage.trim()) {
       return res.status(400).json({
@@ -16,7 +23,7 @@ app.post("/chat", async (req, res) => {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer YOUR_OPENAI_API_KEY`,
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
