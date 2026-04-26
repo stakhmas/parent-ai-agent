@@ -64,14 +64,24 @@ ${profileSummary(profile)}
 Пиши на русском, ясно, без воды, с эмпатией.`;
 }
 
-function buildMockReply(userMessage, profile) {
+function buildMockReply(userMessage, profile, memory) {
   const displayName = profile.childName || "малыш";
   const age = profile.childAgeMonths || "0-3 года";
   const focus = profile.sleepChallenges || "частые пробуждения и плач";
   const goal = profile.familyGoal || "более спокойные укладывания";
+  const lastUserMessage =
+    memory
+      .slice()
+      .reverse()
+      .find((entry) => entry.role === "user" && typeof entry.content === "string")
+      ?.content || "";
+  const continuityHint = lastUserMessage
+    ? `\nКонтекст из прошлого вопроса: "${lastUserMessage}".`
+    : "";
   return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).
 
 Вопрос: "${userMessage}"
+${continuityHint}
 
 Что сделать сегодня (10-20 минут):
 1) Для ${displayName} (${age}) задайте короткий стабильный ритуал перед сном: приглушить свет, тихий голос, одно и то же действие 10 минут.
@@ -125,7 +135,7 @@ app.post("/chat", async (req, res) => {
     const memory = normalizeHistory(chatMemoryBySession.get(sessionId));
 
     if (!OPENAI_API_KEY) {
-      const mockReply = buildMockReply(userMessage, profile);
+      const mockReply = buildMockReply(userMessage, profile, memory);
       const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: mockReply }].slice(-8);
       chatMemoryBySession.set(sessionId, updated);
       return res.json({
