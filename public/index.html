@@ -77,6 +77,35 @@
         margin-bottom: 8px;
       }
 
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        border: 1px solid #d2d8e8;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        background: #fff;
+      }
+
+      .field input:focus,
+      .field select:focus {
+        outline: 2px solid rgba(109, 94, 252, 0.28);
+        border-color: #b7b1ff;
+      }
+
       textarea {
         width: 100%;
         min-height: 110px;
@@ -142,6 +171,31 @@
         margin-top: 10px;
         font-size: 0.86rem;
       }
+
+      .divider {
+        margin: 18px 0 16px;
+        border: 0;
+        border-top: 1px solid #e8ecf7;
+      }
+
+      .quick-prompts {
+        margin-top: 14px;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .quick-btn {
+        border: 1px solid #d7dcf0;
+        background: #fff;
+        color: #4a5575;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
     </style>
   </head>
   <body>
@@ -154,6 +208,36 @@
       </p>
 
       <form id="chat-form">
+        <label>Профиль семьи (для персональных ответов)</label>
+        <div class="profile-grid">
+          <div class="field">
+            <input id="child-name" placeholder="Имя ребенка (например, Миша)" />
+          </div>
+          <div class="field">
+            <input id="child-age" placeholder="Возраст (например, 8 месяцев)" />
+          </div>
+          <div class="field">
+            <input id="sleep-challenges" placeholder="Главная сложность (частые пробуждения)" />
+          </div>
+          <div class="field">
+            <input id="family-goal" placeholder="Цель на месяц (укладывание до 21:00)" />
+          </div>
+          <div class="field">
+            <select id="parent-style">
+              <option value="">Стиль общения помощника</option>
+              <option value="кратко и по шагам">Кратко и по шагам</option>
+              <option value="поддерживающе и мягко">Поддерживающе и мягко</option>
+              <option value="подробно с объяснением причин">Подробно с объяснением причин</option>
+            </select>
+          </div>
+          <div class="field">
+            <input id="locale" placeholder="Контекст семьи (город, режим, язык дома)" />
+          </div>
+        </div>
+
+        <span class="hint">Поля сохраняются локально в этом браузере.</span>
+        <hr class="divider" />
+
         <label for="message">Ваш вопрос</label>
         <textarea
           id="message"
@@ -166,6 +250,15 @@
           <span class="hint" id="loading-hint"></span>
         </div>
       </form>
+
+      <section class="quick-prompts">
+        <label>Быстрые персональные темы</label>
+        <div class="chip-row">
+          <button class="quick-btn" type="button" data-prompt="Составь персональный вечерний ритуал на 15 минут.">Ритуал на вечер</button>
+          <button class="quick-btn" type="button" data-prompt="Как уменьшить ночные пробуждения без жестких методов?">Ночные пробуждения</button>
+          <button class="quick-btn" type="button" data-prompt="Дай мягкий план на 3 дня, чтобы меньше было истерик перед сном.">План на 3 дня</button>
+        </div>
+      </section>
 
       <section class="output" id="response-box">
         Ответ появится здесь после отправки вопроса.
@@ -180,6 +273,58 @@
       const responseMeta = document.getElementById("response-meta");
       const submitBtn = document.getElementById("submit-btn");
       const loadingHint = document.getElementById("loading-hint");
+      const quickPromptButtons = document.querySelectorAll(".quick-btn");
+      const profileInputs = {
+        childName: document.getElementById("child-name"),
+        childAgeMonths: document.getElementById("child-age"),
+        sleepChallenges: document.getElementById("sleep-challenges"),
+        familyGoal: document.getElementById("family-goal"),
+        parentStyle: document.getElementById("parent-style"),
+        locale: document.getElementById("locale")
+      };
+
+      const PROFILE_STORAGE_KEY = "parent-ai-profile-v1";
+      const SESSION_STORAGE_KEY = "parent-ai-session-v1";
+
+      function getSessionId() {
+        const existing = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (existing) {
+          return existing;
+        }
+        const generated =
+          (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+          `session-${Date.now()}`;
+        localStorage.setItem(SESSION_STORAGE_KEY, generated);
+        return generated;
+      }
+
+      function loadProfile() {
+        try {
+          const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+          if (!raw) {
+            return;
+          }
+          const saved = JSON.parse(raw);
+          Object.entries(profileInputs).forEach(([key, input]) => {
+            input.value = typeof saved[key] === "string" ? saved[key] : "";
+          });
+        } catch (_error) {
+          localStorage.removeItem(PROFILE_STORAGE_KEY);
+        }
+      }
+
+      function saveProfile() {
+        const profile = Object.fromEntries(
+          Object.entries(profileInputs).map(([key, input]) => [key, input.value.trim()])
+        );
+        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      }
+
+      function getProfile() {
+        return Object.fromEntries(
+          Object.entries(profileInputs).map(([key, input]) => [key, input.value.trim()])
+        );
+      }
 
       function setLoading(isLoading) {
         submitBtn.disabled = isLoading;
@@ -191,6 +336,19 @@
         responseBox.textContent = text;
         responseBox.classList.toggle("error", Boolean(isError));
       }
+
+      loadProfile();
+      Object.values(profileInputs).forEach((input) => {
+        input.addEventListener("change", saveProfile);
+        input.addEventListener("blur", saveProfile);
+      });
+
+      quickPromptButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          messageInput.value = button.dataset.prompt || "";
+          messageInput.focus();
+        });
+      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -206,10 +364,16 @@
         responseMeta.textContent = "";
 
         try {
+          const profile = getProfile();
+          saveProfile();
           const response = await fetch("/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({
+              message,
+              profile,
+              sessionId: getSessionId()
+            })
           });
 
           const data = await response.json();
@@ -218,8 +382,11 @@
           }
 
           setOutput(data.reply || "Ответ пустой.", false);
+          const childHint = profile.childName ? `Профиль: ${profile.childName}` : "Профиль: общий";
           responseMeta.textContent =
-            data.mode === "mock" ? "Режим: локальный mock" : "Режим: OpenAI API";
+            data.mode === "mock"
+              ? `Режим: локальный mock · ${childHint}`
+              : `Режим: OpenAI API · ${childHint}`;
         } catch (error) {
           setOutput(error.message || "Не удалось получить ответ.", true);
           responseMeta.textContent = "Попробуйте повторить запрос.";
