@@ -1,18 +1,19 @@
+import "dotenv/config";
 import express from "express";
 import fetch from "node-fetch";
 
 const app = express();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const PORT = Number(process.env.PORT || 3000);
 app.use(express.json());
+app.use(express.static("public"));
+
+function buildMockReply(userMessage) {
+  return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).\n\nВаш вопрос: "${userMessage}"\n\nБазовый безопасный план:\n1) Проверьте, сыт ли малыш и сухой ли подгузник.\n2) Снизьте стимуляцию: приглушите свет и звук.\n3) Используйте короткий успокаивающий ритуал (укачивание, белый шум, спокойный голос).\n4) Если плач необычный или длительный, обратитесь к педиатру.`;
+}
 
 app.post("/chat", async (req, res) => {
   try {
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({
-        error: "Missing OPENAI_API_KEY environment variable."
-      });
-    }
-
     const userMessage = req.body?.message;
     if (typeof userMessage !== "string" || !userMessage.trim()) {
       return res.status(400).json({
@@ -20,6 +21,12 @@ app.post("/chat", async (req, res) => {
       });
     }
 
+    if (!OPENAI_API_KEY) {
+      return res.json({
+        mode: "mock",
+        reply: buildMockReply(userMessage)
+      });
+    }
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -60,13 +67,30 @@ app.post("/chat", async (req, res) => {
 
     return res.json({ reply });
   } catch (error) {
-    return res.status(502).json({
-      error: "Failed to reach OpenAI API.",
+    return res.status(500).json({
+      error: "Unexpected server error.",
       details: error instanceof Error ? error.message : String(error)
     });
   }
 });
 
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+app.get("/api", (_req, res) => {
+  res.json({
+    name: "Parent AI Agent API",
+    status: "running",
+    endpoints: {
+      ui: "GET /",
+      api: "GET /api",
+      health: "GET /health",
+      chat: "POST /chat"
+    }
+  });
+});
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
