@@ -180,6 +180,57 @@
         white-space: pre-wrap;
       }
 
+      .chat-window {
+        margin-top: 16px;
+        border: 1px solid #e5e9f2;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fbfcff, #f6f8ff);
+        padding: 12px;
+        max-height: 420px;
+        overflow: auto;
+        display: grid;
+        gap: 10px;
+      }
+
+      .chat-bubble {
+        max-width: 85%;
+        border-radius: 14px;
+        padding: 10px 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        box-shadow: 0 4px 14px rgba(66, 61, 130, 0.08);
+      }
+
+      .chat-bubble.user {
+        justify-self: end;
+        background: linear-gradient(120deg, #6d5efc, #9f67ff);
+        color: #fff;
+        border-bottom-right-radius: 5px;
+      }
+
+      .chat-bubble.assistant {
+        justify-self: start;
+        background: #fff;
+        color: #2b3252;
+        border: 1px solid #e5e9f2;
+        border-bottom-left-radius: 5px;
+      }
+
+      .chat-bubble-meta {
+        display: block;
+        font-size: 0.74rem;
+        margin-bottom: 5px;
+        font-weight: 700;
+      }
+
+      .chat-bubble.user .chat-bubble-meta {
+        color: rgba(255, 255, 255, 0.86);
+      }
+
+      .chat-bubble.assistant .chat-bubble-meta {
+        color: #5b4bd8;
+      }
+
       .history {
         margin-top: 16px;
       }
@@ -405,6 +456,9 @@
         Ответ появится здесь после отправки вопроса.
       </section>
       <div class="meta" id="response-meta"></div>
+      <section class="chat-window" id="chat-window" aria-label="Чат с помощником">
+        <div class="hint" id="chat-empty-hint">Здесь появится диалог в формате чата.</div>
+      </section>
       <section class="history">
         <div class="history-header">
           <label>История диалога</label>
@@ -419,6 +473,8 @@
       const messageInput = document.getElementById("message");
       const responseBox = document.getElementById("response-box");
       const responseMeta = document.getElementById("response-meta");
+      const chatWindow = document.getElementById("chat-window");
+      const chatEmptyHint = document.getElementById("chat-empty-hint");
       const submitBtn = document.getElementById("submit-btn");
       const loadingHint = document.getElementById("loading-hint");
       const quickPromptButtons = document.querySelectorAll(".quick-btn");
@@ -505,6 +561,35 @@
         localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(entries.slice(-12)));
       }
 
+      function renderChatBubbles() {
+        const history = getHistory();
+        chatWindow.innerHTML = "";
+        if (!history.length) {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.id = "chat-empty-hint";
+          hint.textContent = "Здесь появится диалог в формате чата.";
+          chatWindow.appendChild(hint);
+          return;
+        }
+        history.forEach((entry) => {
+          const bubble = document.createElement("article");
+          bubble.className = `chat-bubble ${entry.role === "user" ? "user" : "assistant"}`;
+
+          const meta = document.createElement("span");
+          meta.className = "chat-bubble-meta";
+          meta.textContent = entry.role === "user" ? "Вы" : "Помощник";
+
+          const text = document.createElement("div");
+          text.textContent = entry.text || "";
+
+          bubble.appendChild(meta);
+          bubble.appendChild(text);
+          chatWindow.appendChild(bubble);
+        });
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
+
       function renderHistory() {
         const history = getHistory();
         historyList.innerHTML = "";
@@ -537,10 +622,12 @@
         history.push({ role, text });
         saveHistory(history);
         renderHistory();
+        renderChatBubbles();
       }
 
       loadProfile();
       renderHistory();
+      renderChatBubbles();
       Object.values(profileInputs).forEach((input) => {
         input.addEventListener("change", saveProfile);
         input.addEventListener("blur", saveProfile);
@@ -548,6 +635,7 @@
       clearHistoryBtn.addEventListener("click", () => {
         localStorage.removeItem(HISTORY_STORAGE_KEY);
         renderHistory();
+        renderChatBubbles();
       });
 
       quickPromptButtons.forEach((button) => {
