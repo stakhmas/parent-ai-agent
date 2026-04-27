@@ -79,11 +79,48 @@ function pickSourcesByTopic(topicKey) {
     night_wakings: ["Джон Боулби", "Дональд Винникотт", "Эрик Эриксон"],
     sleep_onset: ["Джон Боулби", "Ю.Б. Гиппенрейтер", "Ж. Пиаже"],
     daily_routine: ["Л.С. Выготский", "Ж. Пиаже", "Ю.Б. Гиппенрейтер"],
+    repetitive_self_touch: ["Ю.Б. Гиппенрейтер", "Л.С. Выготский", "Дональд Винникотт"],
     general_sleep: ["Джон Боулби", "Ю.Б. Гиппенрейтер", "Л.С. Выготский"]
   };
   return (topicToAuthors[topicKey] || topicToAuthors.general_sleep)
     .map(getSourceByAuthor)
     .filter(Boolean);
+}
+
+function sanitizeProfile(rawProfile) {
+  const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
+  return {
+    childName:
+      typeof profile.childName === "string" ? profile.childName.trim().slice(0, 80) : "",
+    childAgeMonths:
+      typeof profile.childAgeMonths === "string"
+        ? profile.childAgeMonths.trim().slice(0, 20)
+        : "",
+    sleepChallenges:
+      typeof profile.sleepChallenges === "string"
+        ? profile.sleepChallenges.trim().slice(0, 300)
+        : "",
+    familyGoal:
+      typeof profile.familyGoal === "string" ? profile.familyGoal.trim().slice(0, 300) : "",
+    parentStyle:
+      typeof profile.parentStyle === "string" ? profile.parentStyle.trim().slice(0, 120) : "",
+    locale:
+      typeof profile.locale === "string" ? profile.locale.trim().slice(0, 80) : ""
+  };
+}
+
+function profileSummary(profile) {
+  const named =
+    profile.childName && profile.childAgeMonths
+      ? `${profile.childName}, ${profile.childAgeMonths}`
+      : profile.childName || profile.childAgeMonths || "не указан";
+  return [
+    `Ребенок: ${named}`,
+    `Текущие сложности: ${profile.sleepChallenges || "не указаны"}`,
+    `Цель семьи: ${profile.familyGoal || "не указана"}`,
+    `Стиль родителя: ${profile.parentStyle || "поддерживающий, спокойный"}`,
+    `Локаль/контекст семьи: ${profile.locale || "не указан"}`
+  ].join("\n");
 }
 
 function extractAgeInMonths(ageText) {
@@ -107,6 +144,17 @@ function extractAgeInMonths(ageText) {
 
 function detectPrimaryTopic(userMessage, profile) {
   const text = `${userMessage} ${profile.sleepChallenges || ""}`.toLowerCase();
+  if (
+    text.includes("трогает поп") ||
+    text.includes("трогает ягод") ||
+    text.includes("трогает промежност") ||
+    text.includes("трогает себя") ||
+    text.includes("мастурб") ||
+    text.includes("навязчив") ||
+    text.includes("тереб")
+  ) {
+    return "repetitive_self_touch";
+  }
   if (text.includes("истер")) {
     return "bedtime_tantrums";
   }
@@ -120,6 +168,15 @@ function detectPrimaryTopic(userMessage, profile) {
     return "daily_routine";
   }
   return "general_sleep";
+}
+
+function detectSafetyFlags(text) {
+  const normalized = typeof text === "string" ? text.toLowerCase() : "";
+  const matched = RED_FLAG_KEYWORDS.filter((keyword) => normalized.includes(keyword));
+  return {
+    needsAttention: matched.length > 0,
+    matchedKeywords: matched
+  };
 }
 
 function buildTopicPlan(topicKey, profile, userMessage) {
@@ -137,12 +194,40 @@ function buildTopicPlan(topicKey, profile, userMessage) {
         ? "Сохраняйте предсказуемые границы: в этом возрасте ритуал + спокойные правила обычно работают лучше резких запретов."
         : "Держите один и тот же порядок действий каждый вечер 7-10 дней подряд.";
 
+  if (topicKey === "repetitive_self_touch") {
+    return {
+      explanation: `${child} (${age}) может использовать повторяющееся касание ягодиц/промежности как способ саморегуляции или снятия напряжения. Это может выглядеть как навязчивое действие, особенно если повторяется в похожих ситуациях.`,
+      causes: [
+        "Незрелость и повышенная чувствительность нервной системы (в быту это часто называют «слабой нервной системой»).",
+        "Стресс, тревога, усталость или перегрузка впечатлениями за день.",
+        "Сенсорный дискомфорт: тесная одежда, зуд кожи, потливость, раздражение.",
+        "Телесные причины: запор, дискомфорт в области промежности, аллергическое раздражение."
+      ],
+      todaySteps: [
+        `В ${locale} отслеживайте 3 триггера в течение 2 дней: когда, где и после чего ${child} начинает это движение.`,
+        "Добавьте 2 безопасные замены в моменты напряжения: мяч-антистресс, глубокое давление/объятие, спокойное дыхание 4 цикла.",
+        "Снизьте стыжение: без ругани и запретов «прекрати немедленно», вместо этого мягко переключайте в нейтральное действие.",
+        "Проверьте базовый комфорт тела сегодня: кожа, белье, запор, гигиена, раздражение."
+      ],
+      plan3Days: [
+        "День 1: ведите дневник эпизодов (время, длительность, триггер).",
+        "День 2: внедрите один стабильный ритуал переключения перед сном и после детсада.",
+        "День 3: оцените, сократилась ли частота, и решите, нужен ли очный педиатр/детский невролог/психолог."
+      ],
+      whenDoctor: [
+        "Если действие усиливается, мешает сну/саду/игре, сопровождается болью, зудом, воспалением.",
+        "Если есть резкие изменения поведения, тревога, регресс навыков или самоповреждение."
+      ],
+      ageHint
+    };
+  }
+
   if (topicKey === "bedtime_tantrums") {
     return {
       todaySteps: [
         `За 90 минут до сна уберите яркий свет и активные игры, оставьте 2 спокойных действия на выбор ${child}.`,
-        `Сделайте короткий ритуал 12 минут: вода/ванна (3 мин) → пижама (2 мин) → книга/объятие (7 мин).`,
-        `В момент истерики: сядьте на уровень глаз, 4 медленных вдоха вместе, повторяйте одну фразу: "Я рядом, помогаю успокоиться".`,
+        "Сделайте короткий ритуал 12 минут: вода/ванна (3 мин) → пижама (2 мин) → книга/объятие (7 мин).",
+        "В момент истерики: сядьте на уровень глаз, 4 медленных вдоха вместе, повторяйте одну фразу: \"Я рядом, помогаю успокоиться\".",
         `В ${locale} закрепите одинаковое время старта ритуала 3 вечера подряд, с допуском не больше 15 минут.`
       ],
       whyItFits: [
@@ -191,7 +276,7 @@ function buildTopicPlan(topicKey, profile, userMessage) {
       ],
       whyItFits: [
         `Сложность семьи: "${challenge}".`,
-        `Цель "${goal}" легче достичь через стабильные "якоря", а не через разовые меры.`,
+        `Цель "${goal}" легче достичь через стабильные якоря, а не через разовые меры.`,
         `${child} (${age}) быстрее адаптируется, когда день предсказуем по 2-3 опорным точкам.`
       ],
       plan3Days: [
@@ -212,7 +297,7 @@ function buildTopicPlan(topicKey, profile, userMessage) {
     ],
     whyItFits: [
       `Семейный запрос: "${challenge}".`,
-      `Цель "${goal}" требует повторяемости, а не "идеального" вечера с первого раза.`,
+      `Цель "${goal}" требует повторяемости, а не идеального вечера с первого раза.`,
       `${child} получает безопасный и предсказуемый сценарий завершения дня.`
     ],
     plan3Days: [
@@ -224,54 +309,30 @@ function buildTopicPlan(topicKey, profile, userMessage) {
   };
 }
 
-function ensureSourcesBlock(reply, topicKey) {
-  if (typeof reply !== "string") {
-    return "";
+function getTopicInstruction(topicKey) {
+  if (topicKey === "repetitive_self_touch") {
+    return [
+      "Структура ответа для этой темы:",
+      "1) Что это может быть (объясни явление первым блоком).",
+      "2) Возможные причины: отдельно перечисли нервную незрелость/чувствительность, стресс, сенсорный дискомфорт, телесные причины.",
+      "3) Что делать дома в ближайшие 7 дней: конкретные шаги.",
+      "4) Когда очно к врачу.",
+      "5) Психологические источники.",
+      "Важно: не утверждай, что причина только одна; формулируй как вероятные факторы."
+    ].join("\n");
   }
-  if (reply.toLowerCase().includes("психологические источники")) {
-    return reply;
-  }
-  const sources = pickSourcesByTopic(topicKey);
-  return `${reply.trim()}\n\nПсихологические источники:\n${sources.map(sourceToLine).join("\n")}`;
-}
 
-function sanitizeProfile(rawProfile) {
-  const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
-  return {
-    childName:
-      typeof profile.childName === "string" ? profile.childName.trim().slice(0, 80) : "",
-    childAgeMonths:
-      typeof profile.childAgeMonths === "string"
-        ? profile.childAgeMonths.trim().slice(0, 20)
-        : "",
-    sleepChallenges:
-      typeof profile.sleepChallenges === "string"
-        ? profile.sleepChallenges.trim().slice(0, 300)
-        : "",
-    familyGoal:
-      typeof profile.familyGoal === "string" ? profile.familyGoal.trim().slice(0, 300) : "",
-    parentStyle:
-      typeof profile.parentStyle === "string" ? profile.parentStyle.trim().slice(0, 120) : "",
-    locale:
-      typeof profile.locale === "string" ? profile.locale.trim().slice(0, 80) : ""
-  };
-}
-
-function profileSummary(profile) {
-  const named =
-    profile.childName && profile.childAgeMonths
-      ? `${profile.childName}, ${profile.childAgeMonths}`
-      : profile.childName || profile.childAgeMonths || "не указан";
   return [
-    `Ребенок: ${named}`,
-    `Текущие сложности: ${profile.sleepChallenges || "не указаны"}`,
-    `Цель семьи: ${profile.familyGoal || "не указана"}`,
-    `Стиль родителя: ${profile.parentStyle || "поддерживающий, спокойный"}`,
-    `Локаль/контекст семьи: ${profile.locale || "не указан"}`
+    "Структура ответа (всегда):",
+    "1) Что сделать сегодня (10-20 минут) — 3-5 конкретных шагов.",
+    "2) Почему это подходит именно вам — короткая персонализация под профиль.",
+    "3) План на 3 дня — маленькие реалистичные изменения.",
+    "4) Красные флаги — когда нужно обратиться к врачу.",
+    "5) Психологические источники — 2-3 пункта."
   ].join("\n");
 }
 
-function systemPrompt(profile) {
+function systemPrompt(profile, topicKey) {
   const sourcesList = CLASSIC_PSYCH_SOURCES.map(sourceToLine).join("\n");
   return `Ты — персональный помощник для родителей детей 0-3 лет.
 Твоя задача: дать практичный, спокойный и персонализированный ответ под конкретную семью.
@@ -281,12 +342,7 @@ function systemPrompt(profile) {
 Профиль семьи:
 ${profileSummary(profile)}
 
-Структура ответа (всегда):
-1) "Что сделать сегодня (10-20 минут)" — 3-5 конкретных шагов.
-2) "Почему это подходит именно вам" — короткая персонализация под профиль.
-3) "План на 3 дня" — маленькие реалистичные изменения.
-4) "Красные флаги" — когда нужно обратиться к врачу.
-5) "Психологические источники" — 2-3 пункта в формате "Автор — книга — зачем это здесь".
+${getTopicInstruction(topicKey)}
 
 Обязательно:
 - Используй минимум 3 конкретных факта из профиля/контекста (имя, возраст, цель, сложность, локаль, прошлый вопрос).
@@ -301,20 +357,21 @@ ${sourcesList}
 Пиши на русском, ясно, без воды, с эмпатией.`;
 }
 
-function detectSafetyFlags(text) {
-  const normalized = typeof text === "string" ? text.toLowerCase() : "";
-  const matched = RED_FLAG_KEYWORDS.filter((keyword) => normalized.includes(keyword));
-  return {
-    needsAttention: matched.length > 0,
-    matchedKeywords: matched
-  };
+function ensureSourcesBlock(reply, topicKey) {
+  if (typeof reply !== "string") {
+    return "";
+  }
+  if (reply.toLowerCase().includes("психологические источники")) {
+    return reply;
+  }
+  const sources = pickSourcesByTopic(topicKey);
+  return `${reply.trim()}\n\nПсихологические источники:\n${sources.map(sourceToLine).join("\n")}`;
 }
 
 function buildMockReply(userMessage, profile, memory, safety) {
   const topicKey = detectPrimaryTopic(userMessage, profile);
   const plan = buildTopicPlan(topicKey, profile, userMessage);
-  const focus = profile.sleepChallenges || userMessage;
-  const goal = profile.familyGoal || "более спокойные укладывания";
+  const sourcesBlock = pickSourcesByTopic(topicKey).map(sourceToLine).join("\n");
   const lastUserMessage =
     memory
       .slice()
@@ -325,9 +382,35 @@ function buildMockReply(userMessage, profile, memory, safety) {
     ? `\nКонтекст из прошлого вопроса: "${lastUserMessage}".`
     : "";
   const urgentNote = safety.needsAttention
-    ? `\nВНИМАНИЕ: есть признаки, которые требуют очной оценки врача. При ухудшении состояния или выраженных симптомах обратитесь за срочной медицинской помощью.\n`
+    ? "\nВНИМАНИЕ: есть признаки, которые требуют очной оценки врача. При ухудшении состояния или выраженных симптомах обратитесь за срочной медицинской помощью.\n"
     : "";
-  const sourcesBlock = pickSourcesByTopic(topicKey).map(sourceToLine).join("\n");
+
+  if (topicKey === "repetitive_self_touch") {
+    return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).
+
+Вопрос: "${userMessage}"
+${continuityHint}
+${urgentNote}
+
+Что это может быть:
+${plan.explanation}
+
+Возможные причины:
+${plan.causes.map((line) => `- ${line}`).join("\n")}
+
+Что делать дома в ближайшие 7 дней:
+${plan.todaySteps.map((step, index) => `${index + 1}) ${step}`).join("\n")}
+
+План на 3 дня:
+${plan.plan3Days.map((line) => `- ${line}`).join("\n")}
+
+Когда очно к врачу:
+${plan.whenDoctor.map((line) => `- ${line}`).join("\n")}
+
+Психологические источники:
+${sourcesBlock}`;
+  }
+
   return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).
 
 Вопрос: "${userMessage}"
@@ -385,6 +468,7 @@ app.post("/chat", async (req, res) => {
     const memory = normalizeHistory(chatMemoryBySession.get(sessionId));
     const safety = detectSafetyFlags(userMessage);
     const topicKey = detectPrimaryTopic(userMessage, profile);
+    const topicPlan = buildTopicPlan(topicKey, profile, userMessage);
 
     if (!OPENAI_API_KEY) {
       const mockReply = buildMockReply(userMessage, profile, memory, safety);
@@ -399,20 +483,20 @@ app.post("/chat", async (req, res) => {
         topic: topicKey
       });
     }
+
     const previousUserQuestion =
       memory
         .slice()
         .reverse()
         .find((entry) => entry.role === "user")
         ?.content || "нет";
-    const topicPlan = buildTopicPlan(topicKey, profile, userMessage);
     const personalizationContext = [
       `Тема запроса: ${topicKey}`,
       `Прошлый вопрос в этой сессии: ${previousUserQuestion}`,
       `Текущая сложность: ${profile.sleepChallenges || "не указана"}`,
       `Цель семьи: ${profile.familyGoal || "не указана"}`,
       `Локаль: ${profile.locale || "не указана"}`,
-      `Возрастная поправка: ${topicPlan.ageHint}`
+      `Возрастная поправка: ${topicPlan.ageHint || "не указана"}`
     ].join("\n");
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -426,7 +510,7 @@ app.post("/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: systemPrompt(profile)
+            content: systemPrompt(profile, topicKey)
           },
           {
             role: "system",
@@ -447,7 +531,7 @@ app.post("/chat", async (req, res) => {
             content: userMessage
           }
         ],
-        temperature: 0.7
+        temperature: 0.5
       })
     });
 
