@@ -65,6 +65,176 @@ const CLASSIC_PSYCH_SOURCES = [
   }
 ];
 
+function sourceToLine(source) {
+  return `- ${source.author} — "${source.title}" (${source.note})`;
+}
+
+function getSourceByAuthor(author) {
+  return CLASSIC_PSYCH_SOURCES.find((source) => source.author === author);
+}
+
+function pickSourcesByTopic(topicKey) {
+  const topicToAuthors = {
+    bedtime_tantrums: ["Ю.Б. Гиппенрейтер", "Дональд Винникотт", "Л.С. Выготский"],
+    night_wakings: ["Джон Боулби", "Дональд Винникотт", "Эрик Эриксон"],
+    sleep_onset: ["Джон Боулби", "Ю.Б. Гиппенрейтер", "Ж. Пиаже"],
+    daily_routine: ["Л.С. Выготский", "Ж. Пиаже", "Ю.Б. Гиппенрейтер"],
+    general_sleep: ["Джон Боулби", "Ю.Б. Гиппенрейтер", "Л.С. Выготский"]
+  };
+  return (topicToAuthors[topicKey] || topicToAuthors.general_sleep)
+    .map(getSourceByAuthor)
+    .filter(Boolean);
+}
+
+function extractAgeInMonths(ageText) {
+  if (typeof ageText !== "string" || !ageText.trim()) {
+    return null;
+  }
+  const normalized = ageText.toLowerCase();
+  const match = normalized.match(/(\d+)/);
+  if (!match) {
+    return null;
+  }
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  if (normalized.includes("год") || normalized.includes("лет")) {
+    return value * 12;
+  }
+  return value;
+}
+
+function detectPrimaryTopic(userMessage, profile) {
+  const text = `${userMessage} ${profile.sleepChallenges || ""}`.toLowerCase();
+  if (text.includes("истер")) {
+    return "bedtime_tantrums";
+  }
+  if (text.includes("пробужд") || text.includes("просып")) {
+    return "night_wakings";
+  }
+  if (text.includes("укладыв") || text.includes("засып")) {
+    return "sleep_onset";
+  }
+  if (text.includes("режим") || text.includes("расписан")) {
+    return "daily_routine";
+  }
+  return "general_sleep";
+}
+
+function buildTopicPlan(topicKey, profile, userMessage) {
+  const child = profile.childName || "ребенок";
+  const age = profile.childAgeMonths || "0-3 года";
+  const goal = profile.familyGoal || "более спокойные укладывания";
+  const challenge = profile.sleepChallenges || userMessage;
+  const locale = profile.locale || "вашем ритме семьи";
+  const ageMonths = extractAgeInMonths(profile.childAgeMonths);
+
+  const ageHint =
+    ageMonths && ageMonths < 12
+      ? "Учитывайте короткие окна бодрствования: не тяните укладывание дольше 2.5-3 часов подряд."
+      : ageMonths && ageMonths <= 36
+        ? "Сохраняйте предсказуемые границы: в этом возрасте ритуал + спокойные правила обычно работают лучше резких запретов."
+        : "Держите один и тот же порядок действий каждый вечер 7-10 дней подряд.";
+
+  if (topicKey === "bedtime_tantrums") {
+    return {
+      todaySteps: [
+        `За 90 минут до сна уберите яркий свет и активные игры, оставьте 2 спокойных действия на выбор ${child}.`,
+        `Сделайте короткий ритуал 12 минут: вода/ванна (3 мин) → пижама (2 мин) → книга/объятие (7 мин).`,
+        `В момент истерики: сядьте на уровень глаз, 4 медленных вдоха вместе, повторяйте одну фразу: "Я рядом, помогаю успокоиться".`,
+        `В ${locale} закрепите одинаковое время старта ритуала 3 вечера подряд, с допуском не больше 15 минут.`
+      ],
+      whyItFits: [
+        `Точка боли семьи: "${challenge}".`,
+        `Цель "${goal}" достигается быстрее, когда вечер становится предсказуемым, а не "переговорным".`,
+        `${child} (${age}) получает понятные шаги и меньше триггеров на переключениях.`
+      ],
+      plan3Days: [
+        "День 1: измерьте время начала истерики и сократите активные стимулы за 90 минут до сна.",
+        "День 2: добавьте визуальную мини-последовательность из 3 карточек (ванна → книга → сон).",
+        "День 3: закрепите одну реакцию родителя на протест без смены тактики каждые 30 секунд."
+      ],
+      ageHint
+    };
+  }
+
+  if (topicKey === "night_wakings") {
+    return {
+      todaySteps: [
+        `Проверьте последнее бодрствование: сократите его на 15-20 минут, если ${child} засыпает перевозбужденным.`,
+        "Ночью используйте один и тот же сценарий 3-5 минут: тихий голос, минимум света, без новых стимулов.",
+        "Перед сном добавьте 8-10 минут "тихого контакта" (книга/поглаживание), чтобы снизить тревожные пробуждения.",
+        `Зафиксируйте 2 пробуждения по времени и реакцию семьи в ${locale}, чтобы на 2-й день убрать лишние действия.`
+      ],
+      whyItFits: [
+        `Семья отмечает: "${challenge}".`,
+        `Цель "${goal}" требует не "идеальной ночи", а последовательной реакции на одинаковые пробуждения.`,
+        `${child} (${age}) получает стабильный сигнал "ночь = спокойно и коротко".`
+      ],
+      plan3Days: [
+        "День 1: ведите короткий лог пробуждений (время + длительность + реакция).",
+        "День 2: оставьте только один ночной сценарий успокоения без смены подхода.",
+        "День 3: сдвиньте ритуал на 10-15 минут раньше, если есть частое пробуждение в первые 1-2 часа сна."
+      ],
+      ageHint
+    };
+  }
+
+  if (topicKey === "daily_routine") {
+    return {
+      todaySteps: [
+        `Определите якоря дня для ${child}: подъем, дневной сон, старт вечернего ритуала.`,
+        "Делайте переходы по таймеру: предупреждение за 5 минут + мягкий сигнал смены активности.",
+        "Сократите хаотичные перекусы за 2 часа до сна, чтобы стабилизировать вечернее поведение.",
+        `Пропишите семейный минимум на сегодня в ${locale}: одно и то же время сна ±20 минут.`
+      ],
+      whyItFits: [
+        `Сложность семьи: "${challenge}".`,
+        `Цель "${goal}" легче достичь через стабильные "якоря", а не через разовые меры.`,
+        `${child} (${age}) быстрее адаптируется, когда день предсказуем по 2-3 опорным точкам.`
+      ],
+      plan3Days: [
+        "День 1: зафиксируйте текущие окна бодрствования и время вечернего спада.",
+        "День 2: выровняйте начало ритуала до постоянного времени.",
+        "День 3: оцените, снизились ли протесты и время засыпания."
+      ],
+      ageHint
+    };
+  }
+
+  return {
+    todaySteps: [
+      `Выберите одну цель на вечер для ${child} (${age}): спокойное засыпание без спешки.`,
+      "Сделайте короткий ритуал 10-15 минут и повторите его в том же порядке.",
+      "Снизьте стимуляцию за 60 минут до сна и оставьте один способ успокоения на 3-5 минут.",
+      `Запишите, что сработало именно в ${locale}, чтобы повторить это завтра без импровизации.`
+    ],
+    whyItFits: [
+      `Семейный запрос: "${challenge}".`,
+      `Цель "${goal}" требует повторяемости, а не "идеального" вечера с первого раза.`,
+      `${child} получает безопасный и предсказуемый сценарий завершения дня.`
+    ],
+    plan3Days: [
+      "День 1: закрепите порядок из 3 шагов перед сном.",
+      "День 2: проверьте время старта ритуала и уберите лишние раздражители.",
+      "День 3: сохраните лучший вариант и добавьте только одно маленькое улучшение."
+    ],
+    ageHint
+  };
+}
+
+function ensureSourcesBlock(reply, topicKey) {
+  if (typeof reply !== "string") {
+    return "";
+  }
+  if (reply.toLowerCase().includes("психологические источники")) {
+    return reply;
+  }
+  const sources = pickSourcesByTopic(topicKey);
+  return `${reply.trim()}\n\nПсихологические источники:\n${sources.map(sourceToLine).join("\n")}`;
+}
+
 function sanitizeProfile(rawProfile) {
   const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
   return {
@@ -102,9 +272,7 @@ function profileSummary(profile) {
 }
 
 function systemPrompt(profile) {
-  const sourcesList = CLASSIC_PSYCH_SOURCES.map(
-    (item) => `- ${item.author} — "${item.title}" (${item.note})`
-  ).join("\n");
+  const sourcesList = CLASSIC_PSYCH_SOURCES.map(sourceToLine).join("\n");
   return `Ты — персональный помощник для родителей детей 0-3 лет.
 Твоя задача: дать практичный, спокойный и персонализированный ответ под конкретную семью.
 Не ставь диагнозы и не назначай лечение.
@@ -119,6 +287,11 @@ ${profileSummary(profile)}
 3) "План на 3 дня" — маленькие реалистичные изменения.
 4) "Красные флаги" — когда нужно обратиться к врачу.
 5) "Психологические источники" — 2-3 пункта в формате "Автор — книга — зачем это здесь".
+
+Обязательно:
+- Используй минимум 3 конкретных факта из профиля/контекста (имя, возраст, цель, сложность, локаль, прошлый вопрос).
+- Добавляй конкретику (минуты, порядок шагов, временные окна), избегай расплывчатых формулировок.
+- Не давай общий текст без привязки к семье.
 
 Опирайся на классические и проверенные источники:
 ${sourcesList}
@@ -138,9 +311,9 @@ function detectSafetyFlags(text) {
 }
 
 function buildMockReply(userMessage, profile, memory, safety) {
-  const displayName = profile.childName || "малыш";
-  const age = profile.childAgeMonths || "0-3 года";
-  const focus = profile.sleepChallenges || "частые пробуждения и плач";
+  const topicKey = detectPrimaryTopic(userMessage, profile);
+  const plan = buildTopicPlan(topicKey, profile, userMessage);
+  const focus = profile.sleepChallenges || userMessage;
   const goal = profile.familyGoal || "более спокойные укладывания";
   const lastUserMessage =
     memory
@@ -154,14 +327,7 @@ function buildMockReply(userMessage, profile, memory, safety) {
   const urgentNote = safety.needsAttention
     ? `\nВНИМАНИЕ: есть признаки, которые требуют очной оценки врача. При ухудшении состояния или выраженных симптомах обратитесь за срочной медицинской помощью.\n`
     : "";
-  const mockSources = [
-    CLASSIC_PSYCH_SOURCES[2],
-    CLASSIC_PSYCH_SOURCES[3],
-    CLASSIC_PSYCH_SOURCES[5]
-  ];
-  const sourcesBlock = mockSources
-    .map((item) => `- ${item.author} — "${item.title}" (${item.note})`)
-    .join("\n");
+  const sourcesBlock = pickSourcesByTopic(topicKey).map(sourceToLine).join("\n");
   return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).
 
 Вопрос: "${userMessage}"
@@ -169,18 +335,14 @@ ${continuityHint}
 ${urgentNote}
 
 Что сделать сегодня (10-20 минут):
-1) Для ${displayName} (${age}) задайте короткий стабильный ритуал перед сном: приглушить свет, тихий голос, одно и то же действие 10 минут.
-2) За 60 минут до сна снизьте стимуляцию (яркий экран/активные игры).
-3) В момент плача используйте один способ успокоения 3-5 минут, не меняя его каждые 20 секунд.
+${plan.todaySteps.map((step, index) => `${index + 1}) ${step}`).join("\n")}
 
 Почему это подходит именно вам:
-- Вы отметили сложность: "${focus}".
-- Ваша цель: "${goal}", поэтому план направлен на предсказуемость и меньшее перевозбуждение.
+- ${plan.whyItFits.join("\n- ")}
+- Возрастная поправка: ${plan.ageHint}
 
 План на 3 дня:
-- День 1: закрепить одинаковый порядок действий.
-- День 2: подвинуть начало ритуала на 10 минут раньше, если есть перегул.
-- День 3: оценить, стало ли засыпание быстрее и просыпаний меньше.
+${plan.plan3Days.map((line) => `- ${line}`).join("\n")}
 
 Красные флаги:
 - высокая температура, вялость, необычный плач или отказ от питья — обратиться к педиатру.
@@ -222,6 +384,7 @@ app.post("/chat", async (req, res) => {
     const profile = sanitizeProfile(req.body?.profile);
     const memory = normalizeHistory(chatMemoryBySession.get(sessionId));
     const safety = detectSafetyFlags(userMessage);
+    const topicKey = detectPrimaryTopic(userMessage, profile);
 
     if (!OPENAI_API_KEY) {
       const mockReply = buildMockReply(userMessage, profile, memory, safety);
@@ -232,9 +395,26 @@ app.post("/chat", async (req, res) => {
       return res.json({
         mode: "mock",
         reply: mockReply,
-        safety
+        safety,
+        topic: topicKey
       });
     }
+    const previousUserQuestion =
+      memory
+        .slice()
+        .reverse()
+        .find((entry) => entry.role === "user")
+        ?.content || "нет";
+    const topicPlan = buildTopicPlan(topicKey, profile, userMessage);
+    const personalizationContext = [
+      `Тема запроса: ${topicKey}`,
+      `Прошлый вопрос в этой сессии: ${previousUserQuestion}`,
+      `Текущая сложность: ${profile.sleepChallenges || "не указана"}`,
+      `Цель семьи: ${profile.familyGoal || "не указана"}`,
+      `Локаль: ${profile.locale || "не указана"}`,
+      `Возрастная поправка: ${topicPlan.ageHint}`
+    ].join("\n");
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -247,6 +427,10 @@ app.post("/chat", async (req, res) => {
           {
             role: "system",
             content: systemPrompt(profile)
+          },
+          {
+            role: "system",
+            content: `Персональный контекст (обязательно встроить в ответ):\n${personalizationContext}`
           },
           ...(safety.needsAttention
             ? [
@@ -280,13 +464,14 @@ app.post("/chat", async (req, res) => {
         error: "OpenAI API returned an unexpected response format."
       });
     }
+    const enrichedReply = ensureSourcesBlock(reply, topicKey);
 
-    const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: reply }].slice(
+    const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: enrichedReply }].slice(
       -MAX_MEMORY_MESSAGES
     );
     chatMemoryBySession.set(sessionId, updated);
 
-    return res.json({ reply, safety });
+    return res.json({ reply: enrichedReply, safety, topic: topicKey });
   } catch (error) {
     return res.status(500).json({
       error: "Unexpected server error.",
