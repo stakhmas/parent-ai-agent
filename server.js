@@ -122,7 +122,7 @@ function profileSummary(profile) {
     `Текущие сложности: ${profile.sleepChallenges || "не указаны"}`,
     `Цель семьи: ${profile.familyGoal || "не указана"}`,
     `Стиль родителя: ${profile.parentStyle || "поддерживающий, спокойный"}`,
-    `Локаль/контекст семьи: ${profile.locale || "не указан"}`
+    `Город/режим семьи: ${profile.locale || "не указан"}`
   ].join("\n");
 }
 
