@@ -9,6 +9,10 @@ const PORT = Number(process.env.PORT || 3000);
 const MAX_MEMORY_MESSAGES = 8;
 const chatMemoryBySession = new Map();
 app.use(express.json());
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 app.use(express.static("public"));
 
 const RED_FLAG_KEYWORDS = [
