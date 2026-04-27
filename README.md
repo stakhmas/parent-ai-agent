@@ -38,6 +38,8 @@ Server runs at `http://localhost:3000`.
 - Fill out the profile fields in the web UI (`GET /`) to get context-aware guidance.
 - Profile data is stored locally in your browser.
 - The backend keeps short in-memory conversation context per `sessionId` to make follow-up answers less generic.
+- The UI keeps a short local dialogue history panel and allows clearing it with one click.
+- If the message contains potential red-flag symptoms, the API response includes a safety marker.
 
 ### Example request
 

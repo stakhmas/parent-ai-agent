@@ -6,9 +6,26 @@ const app = express();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const PORT = Number(process.env.PORT || 3000);
+const MAX_MEMORY_MESSAGES = 8;
 const chatMemoryBySession = new Map();
 app.use(express.json());
 app.use(express.static("public"));
+
+const RED_FLAG_KEYWORDS = [
+  "температура 39",
+  "высокая температура",
+  "судороги",
+  "не дышит",
+  "тяжело дышит",
+  "сильная рвота",
+  "обезвоживание",
+  "кровь в стуле",
+  "вялый",
+  "вялость",
+  "потеря сознания",
+  "синеет",
+  "сыпь с температурой"
+];
 
 function sanitizeProfile(rawProfile) {
   const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
@@ -64,7 +81,16 @@ ${profileSummary(profile)}
 Пиши на русском, ясно, без воды, с эмпатией.`;
 }
 
-function buildMockReply(userMessage, profile, memory) {
+function detectSafetyFlags(text) {
+  const normalized = typeof text === "string" ? text.toLowerCase() : "";
+  const matched = RED_FLAG_KEYWORDS.filter((keyword) => normalized.includes(keyword));
+  return {
+    needsAttention: matched.length > 0,
+    matchedKeywords: matched
+  };
+}
+
+function buildMockReply(userMessage, profile, memory, safety) {
   const displayName = profile.childName || "малыш";
   const age = profile.childAgeMonths || "0-3 года";
   const focus = profile.sleepChallenges || "частые пробуждения и плач";
@@ -78,10 +104,14 @@ function buildMockReply(userMessage, profile, memory) {
   const continuityHint = lastUserMessage
     ? `\nКонтекст из прошлого вопроса: "${lastUserMessage}".`
     : "";
+  const urgentNote = safety.needsAttention
+    ? `\nВНИМАНИЕ: есть признаки, которые требуют очной оценки врача. При ухудшении состояния или выраженных симптомах обратитесь за срочной медицинской помощью.\n`
+    : "";
   return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).
 
 Вопрос: "${userMessage}"
 ${continuityHint}
+${urgentNote}
 
 Что сделать сегодня (10-20 минут):
 1) Для ${displayName} (${age}) задайте короткий стабильный ритуал перед сном: приглушить свет, тихий голос, одно и то же действие 10 минут.
@@ -133,14 +163,18 @@ app.post("/chat", async (req, res) => {
     const sessionId = normalizeSessionId(req.body?.sessionId);
     const profile = sanitizeProfile(req.body?.profile);
     const memory = normalizeHistory(chatMemoryBySession.get(sessionId));
+    const safety = detectSafetyFlags(userMessage);
 
     if (!OPENAI_API_KEY) {
-      const mockReply = buildMockReply(userMessage, profile, memory);
-      const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: mockReply }].slice(-8);
+      const mockReply = buildMockReply(userMessage, profile, memory, safety);
+      const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: mockReply }].slice(
+        -MAX_MEMORY_MESSAGES
+      );
       chatMemoryBySession.set(sessionId, updated);
       return res.json({
         mode: "mock",
-        reply: mockReply
+        reply: mockReply,
+        safety
       });
     }
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -156,6 +190,15 @@ app.post("/chat", async (req, res) => {
             role: "system",
             content: systemPrompt(profile)
           },
+          ...(safety.needsAttention
+            ? [
+                {
+                  role: "system",
+                  content:
+                    "Пользователь описывает потенциально тревожные симптомы. Начни ответ с короткого блока осторожности и порекомендуй очно обратиться к врачу при ухудшении."
+                }
+              ]
+            : []),
           ...memory,
           {
             role: "user",
@@ -180,10 +223,12 @@ app.post("/chat", async (req, res) => {
       });
     }
 
-    const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: reply }].slice(-8);
+    const updated = [...memory, { role: "user", content: userMessage }, { role: "assistant", content: reply }].slice(
+      -MAX_MEMORY_MESSAGES
+    );
     chatMemoryBySession.set(sessionId, updated);
 
-    return res.json({ reply });
+    return res.json({ reply, safety });
   } catch (error) {
     return res.status(500).json({
       error: "Unexpected server error.",
