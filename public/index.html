@@ -170,18 +170,19 @@
         font-size: 0.92rem;
       }
 
-      .output {
-        margin-top: 18px;
-        border: 1px solid #e5e9f2;
-        border-radius: 14px;
-        background: #fafbff;
-        padding: 16px;
-        line-height: 1.55;
-        white-space: pre-wrap;
+      .chat-panel {
+        margin-top: 16px;
+      }
+
+      .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
       }
 
       .chat-window {
-        margin-top: 16px;
         border: 1px solid #e5e9f2;
         border-radius: 14px;
         background: linear-gradient(180deg, #fbfcff, #f6f8ff);
@@ -231,17 +232,6 @@
         color: #5b4bd8;
       }
 
-      .history {
-        margin-top: 16px;
-      }
-
-      .history-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
       .ghost-btn {
         border: 1px solid #d7dcf0;
         background: #fff;
@@ -249,37 +239,6 @@
         border-radius: 999px;
         padding: 7px 12px;
         font-size: 0.82rem;
-      }
-
-      .history-list {
-        list-style: none;
-        margin: 10px 0 0;
-        padding: 0;
-        display: grid;
-        gap: 8px;
-        max-height: 220px;
-        overflow: auto;
-      }
-
-      .history-item {
-        border: 1px solid #e5e9f2;
-        border-radius: 12px;
-        background: #fff;
-        padding: 10px 12px;
-      }
-
-      .history-role {
-        display: inline-block;
-        font-size: 0.76rem;
-        font-weight: 700;
-        color: #5b4bd8;
-        margin-bottom: 4px;
-      }
-
-      .error {
-        border-color: #ffd2dc;
-        background: #fff6f8;
-        color: var(--error);
       }
 
       .meta {
@@ -452,34 +411,27 @@
         </div>
       </section>
 
-      <section class="output" id="response-box">
-        Ответ появится здесь после отправки вопроса.
-      </section>
       <div class="meta" id="response-meta"></div>
-      <section class="chat-window" id="chat-window" aria-label="Чат с помощником">
-        <div class="hint" id="chat-empty-hint">Здесь появится диалог в формате чата.</div>
-      </section>
-      <section class="history">
-        <div class="history-header">
-          <label>История диалога</label>
+      <section class="chat-panel">
+        <div class="chat-header">
+          <label>Чат с помощником</label>
           <button class="ghost-btn" type="button" id="clear-history-btn">Очистить историю</button>
         </div>
-        <ul class="history-list" id="history-list"></ul>
+        <section class="chat-window" id="chat-window" aria-label="Чат с помощником">
+          <div class="hint" id="chat-empty-hint">Здесь появится диалог в формате чата.</div>
+        </section>
       </section>
     </main>
 
     <script>
       const form = document.getElementById("chat-form");
       const messageInput = document.getElementById("message");
-      const responseBox = document.getElementById("response-box");
       const responseMeta = document.getElementById("response-meta");
       const chatWindow = document.getElementById("chat-window");
-      const chatEmptyHint = document.getElementById("chat-empty-hint");
       const submitBtn = document.getElementById("submit-btn");
       const loadingHint = document.getElementById("loading-hint");
       const quickPromptButtons = document.querySelectorAll(".quick-btn");
       const clearHistoryBtn = document.getElementById("clear-history-btn");
-      const historyList = document.getElementById("history-list");
       const profileInputs = {
         childName: document.getElementById("child-name"),
         childAgeMonths: document.getElementById("child-age"),
@@ -539,11 +491,6 @@
         loadingHint.textContent = isLoading ? "Запрос выполняется" : "";
       }
 
-      function setOutput(text, isError) {
-        responseBox.textContent = text;
-        responseBox.classList.toggle("error", Boolean(isError));
-      }
-
       function getHistory() {
         try {
           const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -590,43 +537,14 @@
         chatWindow.scrollTop = chatWindow.scrollHeight;
       }
 
-      function renderHistory() {
-        const history = getHistory();
-        historyList.innerHTML = "";
-        if (!history.length) {
-          const empty = document.createElement("li");
-          empty.className = "hint";
-          empty.textContent = "Пока пусто. Отправьте первый вопрос.";
-          historyList.appendChild(empty);
-          return;
-        }
-        history.forEach((entry) => {
-          const item = document.createElement("li");
-          item.className = "history-item";
-
-          const role = document.createElement("span");
-          role.className = "history-role";
-          role.textContent = entry.role === "user" ? "Вы" : "Помощник";
-
-          const text = document.createElement("div");
-          text.textContent = entry.text || "";
-
-          item.appendChild(role);
-          item.appendChild(text);
-          historyList.appendChild(item);
-        });
-      }
-
       function appendHistory(role, text) {
         const history = getHistory();
         history.push({ role, text });
         saveHistory(history);
-        renderHistory();
         renderChatBubbles();
       }
 
       loadProfile();
-      renderHistory();
       renderChatBubbles();
       Object.values(profileInputs).forEach((input) => {
         input.addEventListener("change", saveProfile);
@@ -634,8 +552,8 @@
       });
       clearHistoryBtn.addEventListener("click", () => {
         localStorage.removeItem(HISTORY_STORAGE_KEY);
-        renderHistory();
         renderChatBubbles();
+        responseMeta.textContent = "История очищена.";
       });
 
       quickPromptButtons.forEach((button) => {
@@ -649,14 +567,14 @@
         event.preventDefault();
         const message = messageInput.value.trim();
         if (!message) {
-          setOutput("Введите вопрос перед отправкой.", true);
-          responseMeta.textContent = "";
+          responseMeta.textContent = "Введите вопрос перед отправкой.";
           return;
         }
 
+        appendHistory("user", message);
+        messageInput.value = "";
         setLoading(true);
-        setOutput("Готовим ответ...", false);
-        responseMeta.textContent = "";
+        responseMeta.textContent = "Готовим ответ...";
 
         try {
           const profile = getProfile();
@@ -676,8 +594,6 @@
             throw new Error(data.error || "Ошибка запроса");
           }
 
-          setOutput(data.reply || "Ответ пустой.", false);
-          appendHistory("user", message);
           appendHistory("assistant", data.reply || "Ответ пустой.");
           const childHint = profile.childName ? `Профиль: ${profile.childName}` : "Профиль: общий";
           const safetyHint = data?.safety?.needsAttention ? " · ⚠️ Нужна очная оценка врача" : "";
@@ -686,8 +602,9 @@
               ? `Режим: локальный mock · ${childHint}${safetyHint}`
               : `Режим: OpenAI API · ${childHint}${safetyHint}`;
         } catch (error) {
-          setOutput(error.message || "Не удалось получить ответ.", true);
-          responseMeta.textContent = "Попробуйте повторить запрос.";
+          const messageText = error.message || "Не удалось получить ответ.";
+          appendHistory("assistant", `Ошибка: ${messageText}`);
+          responseMeta.textContent = "Ошибка запроса. Попробуйте повторить.";
         } finally {
           setLoading(false);
         }
