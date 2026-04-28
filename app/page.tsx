@@ -66,15 +66,15 @@ export default function HomePage() {
             <div className="absolute right-8 top-8 rounded-full bg-lavender p-4 text-violet-600">
               <MoonStar size={34} />
             </div>
-            <p className="eyebrow">Tonight's story</p>
+            <p className="eyebrow">Tonight&apos;s story</p>
             <h2 className="mt-4 text-3xl font-black text-slate-950">
               Mila and the Moon Bear Who Guarded Dreams
             </h2>
             <p className="mt-5 leading-8 text-slate-700">
               When Mila felt the room grow too quiet, a tiny moon bear climbed
-              down from a silver star and whispered, "Brave hearts can glow even
-              in the dark." Together, they lit a trail of dream-lanterns from
-              Mila's pillow to the softest cloud in the sky.
+              down from a silver star and whispered, &ldquo;Brave hearts can glow even
+              in the dark.&rdquo; Together, they lit a trail of dream-lanterns from
+              Mila&apos;s pillow to the softest cloud in the sky.
             </p>
             <div className="mt-8 rounded-3xl bg-rose-50 p-5">
               <p className="font-bold text-rose-900">Message for Parent</p>
@@ -131,7 +131,7 @@ export default function HomePage() {
             {testimonials.map((testimonial) => (
               <div className="card p-6" key={testimonial.name}>
                 <Heart className="text-rose-400" fill="currentColor" />
-                <p className="mt-5 leading-7 text-slate-700">"{testimonial.quote}"</p>
+                <p className="mt-5 leading-7 text-slate-700">&ldquo;{testimonial.quote}&rdquo;</p>
                 <p className="mt-5 font-bold text-slate-950">{testimonial.name}</p>
               </div>
             ))}
