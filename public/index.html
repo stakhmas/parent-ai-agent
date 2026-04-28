@@ -41,6 +41,26 @@
         padding: 28px;
       }
 
+      .hero {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 18px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+
+      .hero-kicker {
+        display: inline-block;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: rgba(109, 94, 252, 0.13);
+        color: #5b4bd8;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+      }
+
       h1 {
         margin: 0 0 8px;
         font-size: clamp(1.4rem, 2.1vw, 2rem);
@@ -75,6 +95,35 @@
         display: block;
         font-weight: 600;
         margin-bottom: 8px;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        border: 1px solid #d2d8e8;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        background: #fff;
+      }
+
+      .field input:focus,
+      .field select:focus {
+        outline: 2px solid rgba(109, 94, 252, 0.28);
+        border-color: #b7b1ff;
       }
 
       textarea {
@@ -121,20 +170,75 @@
         font-size: 0.92rem;
       }
 
-      .output {
-        margin-top: 18px;
-        border: 1px solid #e5e9f2;
-        border-radius: 14px;
-        background: #fafbff;
-        padding: 16px;
-        line-height: 1.55;
-        white-space: pre-wrap;
+      .chat-panel {
+        margin-top: 16px;
       }
 
-      .error {
-        border-color: #ffd2dc;
-        background: #fff6f8;
-        color: var(--error);
+      .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .chat-window {
+        border: 1px solid #e5e9f2;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fbfcff, #f6f8ff);
+        padding: 12px;
+        max-height: 420px;
+        overflow: auto;
+        display: grid;
+        gap: 10px;
+      }
+
+      .chat-bubble {
+        max-width: 85%;
+        border-radius: 14px;
+        padding: 10px 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        box-shadow: 0 4px 14px rgba(66, 61, 130, 0.08);
+      }
+
+      .chat-bubble.user {
+        justify-self: end;
+        background: linear-gradient(120deg, #6d5efc, #9f67ff);
+        color: #fff;
+        border-bottom-right-radius: 5px;
+      }
+
+      .chat-bubble.assistant {
+        justify-self: start;
+        background: #fff;
+        color: #2b3252;
+        border: 1px solid #e5e9f2;
+        border-bottom-left-radius: 5px;
+      }
+
+      .chat-bubble-meta {
+        display: block;
+        font-size: 0.74rem;
+        margin-bottom: 5px;
+        font-weight: 700;
+      }
+
+      .chat-bubble.user .chat-bubble-meta {
+        color: rgba(255, 255, 255, 0.86);
+      }
+
+      .chat-bubble.assistant .chat-bubble-meta {
+        color: #5b4bd8;
+      }
+
+      .ghost-btn {
+        border: 1px solid #d7dcf0;
+        background: #fff;
+        color: #4a5575;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.82rem;
       }
 
       .meta {
@@ -142,18 +246,192 @@
         margin-top: 10px;
         font-size: 0.86rem;
       }
+
+      .divider {
+        margin: 18px 0 16px;
+        border: 0;
+        border-top: 1px solid #e8ecf7;
+      }
+
+      .quick-prompts {
+        margin-top: 14px;
+      }
+
+      .topic-catalog {
+        margin-top: 14px;
+      }
+
+      .topic-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .topic-card {
+        border: 1px solid #dfe5f7;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .topic-title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #2f3660;
+      }
+
+      .topic-desc {
+        color: #5f6788;
+        font-size: 0.82rem;
+        line-height: 1.35;
+      }
+
+      .topic-btn {
+        border: 1px solid #d7dcf0;
+        background: #f6f8ff;
+        color: #4a5575;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.82rem;
+        justify-self: start;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .quick-btn {
+        border: 1px solid #d7dcf0;
+        background: #fff;
+        color: #4a5575;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+
+      .art-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .art-card {
+        border-radius: 16px;
+        background: linear-gradient(135deg, #f7f7ff, #eef8ff);
+        border: 1px solid #e3e8fb;
+        padding: 10px;
+        overflow: hidden;
+      }
+
+      .family-art {
+        display: block;
+        width: 100%;
+        height: 230px;
+        object-fit: cover;
+        border-radius: 10px;
+      }
+
+      @media (max-width: 820px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
     <main class="card">
-      <div class="status"><span class="dot"></span> API запущен</div>
-      <h1>Parent AI Agent</h1>
-      <p class="subtitle">
-        Задайте вопрос про сон, режим или успокоение малыша. Если API-ключ не задан,
-        приложение ответит в локальном mock-режиме.
-      </p>
+      <section class="topic-catalog">
+        <label>Основные запросы родителей</label>
+        <div class="topic-grid">
+          <article class="topic-card">
+            <div class="topic-title">Навязчивые движения</div>
+            <div class="topic-desc">Когда ребенок часто трогает тело, повторяет одно и то же движение, тревожится.</div>
+            <button class="topic-btn topic-prompt-btn" type="button" data-prompt="Ребенок постоянно трогает попу, это навязчивое движение? почему и что делать?">Открыть тему</button>
+          </article>
+          <article class="topic-card">
+            <div class="topic-title">Сон и укладывание</div>
+            <div class="topic-desc">Истерики перед сном, трудное засыпание, частые пробуждения ночью.</div>
+            <button class="topic-btn topic-prompt-btn" type="button" data-prompt="Ребенок тяжело засыпает и часто просыпается ночью. Дай план на 3 дня с конкретными шагами.">Открыть тему</button>
+          </article>
+          <article class="topic-card">
+            <div class="topic-title">Питание и аппетит</div>
+            <div class="topic-desc">Мало ест, выборочная еда, отказ от новых продуктов, перекусы вместо приема пищи.</div>
+            <button class="topic-btn topic-prompt-btn" type="button" data-prompt="Ребенок ест выборочно и отказывается от новых продуктов. Что это значит и как мягко исправить?">Открыть тему</button>
+          </article>
+          <article class="topic-card">
+            <div class="topic-title">Истерики и поведение</div>
+            <div class="topic-desc">Частые протесты, сложные переходы, крики в общественных местах.</div>
+            <button class="topic-btn topic-prompt-btn" type="button" data-prompt="У ребенка частые истерики при запретах. Как реагировать без крика и что делать пошагово?">Открыть тему</button>
+          </article>
+          <article class="topic-card">
+            <div class="topic-title">Адаптация к саду</div>
+            <div class="topic-desc">Сильный стресс утром, слезы перед садом, откат поведения дома.</div>
+            <button class="topic-btn topic-prompt-btn" type="button" data-prompt="Ребенок тяжело адаптируется к детскому саду, плачет утром. Как помочь и что делать дома?">Открыть тему</button>
+          </article>
+          <article class="topic-card">
+            <div class="topic-title">Режим дня</div>
+            <div class="topic-desc">Нет стабильного графика, поздний сон, перегулы и переутомление.</div>
+            <button class="topic-btn topic-prompt-btn" type="button" data-prompt="Помоги выстроить режим дня для ребенка с учетом сада и спокойного укладывания до 21:00.">Открыть тему</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="hero">
+        <div>
+          <span class="hero-kicker">С заботой о семье</span>
+          <h1>Parent AI Agent</h1>
+          <p class="subtitle">
+            Персональный помощник для родителей: мягкие шаги, спокойный тон, план под ваш режим и возраст малыша.
+            Если API-ключ не задан, приложение ответит в локальном mock-режиме.
+          </p>
+        </div>
+        <div class="art-grid">
+          <div class="art-card">
+            <img
+              class="family-art"
+              src="/hero_family_cartoon.jpg"
+              alt="Мультяшная счастливая семья"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
 
       <form id="chat-form">
+        <label>Профиль семьи (для персональных ответов)</label>
+        <div class="profile-grid">
+          <div class="field">
+            <input id="child-name" placeholder="Имя ребенка (например, Миша)" />
+          </div>
+          <div class="field">
+            <input id="child-age" placeholder="Возраст (например, 8 месяцев)" />
+          </div>
+          <div class="field">
+            <input id="sleep-challenges" placeholder="Главная сложность (частые пробуждения)" />
+          </div>
+          <div class="field">
+            <input id="family-goal" placeholder="Цель на месяц (укладывание до 21:00)" />
+          </div>
+          <div class="field">
+            <select id="parent-style">
+              <option value="">Стиль общения помощника</option>
+              <option value="кратко и по шагам">Кратко и по шагам</option>
+              <option value="поддерживающе и мягко">Поддерживающе и мягко</option>
+              <option value="подробно с объяснением причин">Подробно с объяснением причин</option>
+            </select>
+          </div>
+          <div class="field">
+            <input id="locale" placeholder="Город, режим, язык дома" />
+          </div>
+        </div>
+
+        <span class="hint">Поля сохраняются локально в этом браузере.</span>
+        <hr class="divider" />
+
         <label for="message">Ваш вопрос</label>
         <textarea
           id="message"
@@ -167,19 +445,89 @@
         </div>
       </form>
 
-      <section class="output" id="response-box">
-        Ответ появится здесь после отправки вопроса.
+      <section class="quick-prompts">
+        <label>Быстрые персональные темы</label>
+        <div class="chip-row">
+          <button class="quick-btn" type="button" data-prompt="Составь персональный вечерний ритуал на 15 минут.">Ритуал на вечер</button>
+          <button class="quick-btn" type="button" data-prompt="Как уменьшить ночные пробуждения без жестких методов?">Ночные пробуждения</button>
+          <button class="quick-btn" type="button" data-prompt="Дай мягкий план на 3 дня, чтобы меньше было истерик перед сном.">План на 3 дня</button>
+        </div>
       </section>
+
       <div class="meta" id="response-meta"></div>
+      <section class="chat-panel">
+        <div class="chat-header">
+          <label>Чат с помощником</label>
+          <button class="ghost-btn" type="button" id="clear-history-btn">Очистить историю</button>
+        </div>
+        <section class="chat-window" id="chat-window" aria-label="Чат с помощником">
+          <div class="hint" id="chat-empty-hint">Здесь появится диалог в формате чата.</div>
+        </section>
+      </section>
     </main>
 
     <script>
       const form = document.getElementById("chat-form");
       const messageInput = document.getElementById("message");
-      const responseBox = document.getElementById("response-box");
       const responseMeta = document.getElementById("response-meta");
+      const chatWindow = document.getElementById("chat-window");
       const submitBtn = document.getElementById("submit-btn");
       const loadingHint = document.getElementById("loading-hint");
+      const quickPromptButtons = document.querySelectorAll(".quick-btn");
+      const topicPromptButtons = document.querySelectorAll(".topic-prompt-btn");
+      const clearHistoryBtn = document.getElementById("clear-history-btn");
+      const profileInputs = {
+        childName: document.getElementById("child-name"),
+        childAgeMonths: document.getElementById("child-age"),
+        sleepChallenges: document.getElementById("sleep-challenges"),
+        familyGoal: document.getElementById("family-goal"),
+        parentStyle: document.getElementById("parent-style"),
+        locale: document.getElementById("locale")
+      };
+
+      const PROFILE_STORAGE_KEY = "parent-ai-profile-v1";
+      const SESSION_STORAGE_KEY = "parent-ai-session-v1";
+      const HISTORY_STORAGE_KEY = "parent-ai-history-v1";
+
+      function getSessionId() {
+        const existing = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (existing) {
+          return existing;
+        }
+        const generated =
+          (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+          `session-${Date.now()}`;
+        localStorage.setItem(SESSION_STORAGE_KEY, generated);
+        return generated;
+      }
+
+      function loadProfile() {
+        try {
+          const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+          if (!raw) {
+            return;
+          }
+          const saved = JSON.parse(raw);
+          Object.entries(profileInputs).forEach(([key, input]) => {
+            input.value = typeof saved[key] === "string" ? saved[key] : "";
+          });
+        } catch (_error) {
+          localStorage.removeItem(PROFILE_STORAGE_KEY);
+        }
+      }
+
+      function saveProfile() {
+        const profile = Object.fromEntries(
+          Object.entries(profileInputs).map(([key, input]) => [key, input.value.trim()])
+        );
+        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      }
+
+      function getProfile() {
+        return Object.fromEntries(
+          Object.entries(profileInputs).map(([key, input]) => [key, input.value.trim()])
+        );
+      }
 
       function setLoading(isLoading) {
         submitBtn.disabled = isLoading;
@@ -187,29 +535,109 @@
         loadingHint.textContent = isLoading ? "Запрос выполняется" : "";
       }
 
-      function setOutput(text, isError) {
-        responseBox.textContent = text;
-        responseBox.classList.toggle("error", Boolean(isError));
+      function getHistory() {
+        try {
+          const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+          if (!raw) {
+            return [];
+          }
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_error) {
+          return [];
+        }
       }
+
+      function saveHistory(entries) {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(entries.slice(-12)));
+      }
+
+      function renderChatBubbles() {
+        const history = getHistory();
+        chatWindow.innerHTML = "";
+        if (!history.length) {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.id = "chat-empty-hint";
+          hint.textContent = "Здесь появится диалог в формате чата.";
+          chatWindow.appendChild(hint);
+          return;
+        }
+        history.forEach((entry) => {
+          const bubble = document.createElement("article");
+          bubble.className = `chat-bubble ${entry.role === "user" ? "user" : "assistant"}`;
+
+          const meta = document.createElement("span");
+          meta.className = "chat-bubble-meta";
+          meta.textContent = entry.role === "user" ? "Вы" : "Помощник";
+
+          const text = document.createElement("div");
+          text.textContent = entry.text || "";
+
+          bubble.appendChild(meta);
+          bubble.appendChild(text);
+          chatWindow.appendChild(bubble);
+        });
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
+
+      function appendHistory(role, text) {
+        const history = getHistory();
+        history.push({ role, text });
+        saveHistory(history);
+        renderChatBubbles();
+      }
+
+      loadProfile();
+      renderChatBubbles();
+      Object.values(profileInputs).forEach((input) => {
+        input.addEventListener("change", saveProfile);
+        input.addEventListener("blur", saveProfile);
+      });
+      clearHistoryBtn.addEventListener("click", () => {
+        localStorage.removeItem(HISTORY_STORAGE_KEY);
+        renderChatBubbles();
+        responseMeta.textContent = "История очищена.";
+      });
+
+      quickPromptButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          messageInput.value = button.dataset.prompt || "";
+          messageInput.focus();
+        });
+      });
+
+      topicPromptButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          messageInput.value = button.dataset.prompt || "";
+          messageInput.focus();
+        });
+      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const message = messageInput.value.trim();
         if (!message) {
-          setOutput("Введите вопрос перед отправкой.", true);
-          responseMeta.textContent = "";
+          responseMeta.textContent = "Введите вопрос перед отправкой.";
           return;
         }
 
+        appendHistory("user", message);
+        messageInput.value = "";
         setLoading(true);
-        setOutput("Готовим ответ...", false);
-        responseMeta.textContent = "";
+        responseMeta.textContent = "Готовим ответ...";
 
         try {
+          const profile = getProfile();
+          saveProfile();
           const response = await fetch("/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({
+              message,
+              profile,
+              sessionId: getSessionId()
+            })
           });
 
           const data = await response.json();
@@ -217,12 +645,17 @@
             throw new Error(data.error || "Ошибка запроса");
           }
 
-          setOutput(data.reply || "Ответ пустой.", false);
+          appendHistory("assistant", data.reply || "Ответ пустой.");
+          const childHint = profile.childName ? `Профиль: ${profile.childName}` : "Профиль: общий";
+          const safetyHint = data?.safety?.needsAttention ? " · ⚠️ Нужна очная оценка врача" : "";
           responseMeta.textContent =
-            data.mode === "mock" ? "Режим: локальный mock" : "Режим: OpenAI API";
+            data.mode === "mock"
+              ? `Режим: локальный mock · ${childHint}${safetyHint}`
+              : `Режим: OpenAI API · ${childHint}${safetyHint}`;
         } catch (error) {
-          setOutput(error.message || "Не удалось получить ответ.", true);
-          responseMeta.textContent = "Попробуйте повторить запрос.";
+          const messageText = error.message || "Не удалось получить ответ.";
+          appendHistory("assistant", `Ошибка: ${messageText}`);
+          responseMeta.textContent = "Ошибка запроса. Попробуйте повторить.";
         } finally {
           setLoading(false);
         }
