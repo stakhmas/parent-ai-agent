@@ -11,6 +11,62 @@ const PORT = Number(process.env.PORT || 3000);
 const LEAD_LOG_PATH = process.env.LEAD_LOG_PATH || path.join(process.cwd(), "data", "leads.ndjson");
 const utmFields = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "yclid"];
 const leadInbox = [];
+const PARENT_COACH_SYSTEM_PROMPT = `You are an AI assistant for parents.
+Your role is to give thoughtful, warm, intelligent, practical, and psychologically informed guidance about children, parenting, emotions, behavior, family relationships, routines, and child development.
+
+CORE IDENTITY:
+- Respond like an experienced child psychologist + calm parenting coach + supportive human expert.
+- Be empathetic, observant, emotionally intelligent, and practical.
+- Never sound robotic, generic, cold, or overly formal.
+
+GOAL:
+- Help parents feel understood, calmer, and clearer about what to do next.
+- Give personalized, nuanced, emotionally mature, and useful answers.
+
+TONE:
+- Warm, respectful, calm.
+- Reassuring but honest.
+- Intelligent and emotionally deep.
+- Never judgmental, never shaming, never lecturing.
+
+RESPONSE LOGIC:
+1) First understand the real issue under the surface (stress, guilt, fear, exhaustion, overload, uncertainty, regulation issues, family tension).
+2) Validate feelings naturally and briefly.
+3) Give developmentally smart insight (age behavior, nervous system overload, attachment needs, boundaries, transitions, sensory factors, routine inconsistency, sibling dynamics).
+4) Give practical steps with specifics:
+   - what to say,
+   - what to do today/tonight,
+   - what to change this week,
+   - what to observe,
+   - what to stop doing.
+5) Personalize using details from the user message.
+6) Add one deeper psychological insight the parent might not have considered.
+7) If suitable, structure answer:
+   - empathy,
+   - what may be happening,
+   - what to do now,
+   - what to do long-term,
+   - when to seek specialist help.
+8) If user is distressed: be extra warm, grounding, reduce guilt, offer one simple next step.
+9) For child behavior requests, separate:
+   - likely normal developmental phase,
+   - parenting pattern factors,
+   - environmental stressors,
+   - signs that need evaluation.
+
+NEVER:
+- shame parents,
+- diagnose recklessly,
+- promise certainty,
+- be generic or overly short.
+
+LANGUAGE:
+- Reply in the same language as the user.
+- If user writes Russian, reply in Russian.
+
+IMPORTANT SAFETY:
+- Do not provide medical diagnosis.
+- For severe red flags or danger, advise urgent in-person professional help.`;
 
 app.use(express.json({ limit: "1mb" }));
 app.use((_req, res, next) => {
@@ -19,8 +75,153 @@ app.use((_req, res, next) => {
 });
 app.use(express.static("public"));
 
+function detectLanguage(text) {
+  return /[а-яё]/i.test(text) ? "ru" : "en";
+}
+
+function detectConcernTopic(text) {
+  const normalized = text.toLowerCase();
+  if (
+    normalized.includes("сон") ||
+    normalized.includes("засып") ||
+    normalized.includes("пробужд") ||
+    normalized.includes("sleep") ||
+    normalized.includes("bedtime")
+  ) {
+    return "sleep";
+  }
+  if (
+    normalized.includes("истер") ||
+    normalized.includes("крич") ||
+    normalized.includes("tantrum") ||
+    normalized.includes("meltdown")
+  ) {
+    return "tantrum";
+  }
+  if (
+    normalized.includes("агресс") ||
+    normalized.includes("бьет") ||
+    normalized.includes("кусает") ||
+    normalized.includes("hits") ||
+    normalized.includes("aggress")
+  ) {
+    return "aggression";
+  }
+  if (
+    normalized.includes("садик") ||
+    normalized.includes("школ") ||
+    normalized.includes("трев") ||
+    normalized.includes("anxiety") ||
+    normalized.includes("kindergarten")
+  ) {
+    return "anxiety";
+  }
+  return "general";
+}
+
+function extractAgeMention(text, language) {
+  const ruMatch = text.match(/(\d+)\s*(года|год|лет|месяц|месяца|месяцев)/i);
+  if (ruMatch) {
+    return ruMatch[0];
+  }
+  const enMatch = text.match(/(\d+)\s*(year|years|month|months)/i);
+  if (enMatch) {
+    return enMatch[0];
+  }
+  return language === "ru" ? "возраст не указан" : "age not specified";
+}
+
 function buildMockReply(userMessage) {
-  return `Похоже, сейчас включен локальный mock-режим (без OpenAI API ключа).\n\nВаш вопрос: "${userMessage}"\n\nБазовый безопасный план:\n1) Проверьте, сыт ли малыш и сухой ли подгузник.\n2) Снизьте стимуляцию: приглушите свет и звук.\n3) Используйте короткий успокаивающий ритуал (укачивание, белый шум, спокойный голос).\n4) Если плач необычный или длительный, обратитесь к педиатру.`;
+  const language = detectLanguage(userMessage);
+  const topic = detectConcernTopic(userMessage);
+  const ageHint = extractAgeMention(userMessage, language);
+  if (language !== "ru") {
+    return `Local mock mode is active (no OpenAI API key).
+
+I hear how stressful this can feel. You are not overreacting.
+
+What may be happening:
+- At this age (${ageHint}), behavior often reflects nervous system overload, not "bad character".
+- The pattern is usually a mix of developmental limits + fatigue + transition stress + need for connection.
+
+What to do right now:
+1) Regulate first: calm voice, short sentences, lower stimulation.
+2) Name feeling + boundary: "I see you're upset. I won't let you hurt."
+3) Offer one concrete alternative action (hug, water, breathing, squeeze pillow).
+
+What to change this week:
+- Keep one predictable routine anchor (same bedtime or decompression window after daycare).
+- Reduce high-pressure moments and long explanations during escalations.
+- Track triggers: time, place, people, hunger, tiredness, transitions.
+
+What to stop:
+- Repeated lectures during dysregulation.
+- Harsh shaming language.
+
+Parent script:
+"You're having a hard moment. I'm with you. I won't let you hurt. We'll calm down first, then talk."
+
+When to seek specialist support:
+- If episodes become frequent, intense, or affect sleep, social functioning, or safety.`;
+  }
+
+  if (topic === "sleep") {
+    return `Сейчас включен локальный mock-режим (без OpenAI API ключа).
+
+Понимаю, как это выматывает. Когда тема про сон тянется неделями, родитель быстро оказывается на грани.
+
+Что может происходить:
+- В возрасте ${ageHint} проблемы с засыпанием часто связаны не с "упрямством", а с перегрузкой нервной системы к вечеру.
+- После садика/активного дня ребенок может держаться из последних сил, и протест перед сном — это разрядка, а не манипуляция.
+
+Что сделать сегодня вечером:
+1) За 60 минут до сна уберите яркий свет и активные игры.
+2) Дайте короткий предсказуемый ритуал (10-15 минут) в одном порядке.
+3) В момент протеста — минимум слов, спокойная твердая опора: "Я рядом. Сейчас успокаиваемся, потом спать."
+
+Что изменить за неделю:
+- Держать одинаковое время начала ритуала (допуск до 15 минут).
+- После садика добавить 15 минут тихого контакта без требований.
+- Вести мини-заметки: когда срывается укладывание и что было за 2 часа до сна.
+
+Что лучше прекратить:
+- Длинные переговоры в разгар истерики.
+- Часто менять тактику в один и тот же вечер.
+
+Фраза-скрипт для родителя:
+"Ты злишься, я вижу. Я рядом и помогу успокоиться. Спать все равно будем."
+
+Когда нужен очный специалист:
+- Если нарушение сна стойко ухудшается 2-3 недели подряд, есть резкая дневная вялость, сильные ночные страхи или регресс навыков.`;
+  }
+
+  return `Сейчас включен локальный mock-режим (без OpenAI API ключа).
+
+Понимаю, почему вас это тревожит. В таких ситуациях легко почувствовать вину и растерянность.
+
+Что может происходить:
+- В возрасте ${ageHint} сложное поведение часто отражает не "плохой характер", а трудности саморегуляции.
+- Обычно это сочетание факторов: усталость, нехватка контакта, перегрузка, резкие переходы, непредсказуемые границы.
+
+Что сделать прямо сейчас:
+1) Сначала контакт и спокойный тон, потом короткая инструкция.
+2) Назовите чувство и обозначьте границу без стыда.
+3) Дайте один безопасный способ разрядки (подышать, попить воды, сжать подушку, обняться).
+
+Что поменять в ближайшие 7 дней:
+- Выбрать 1-2 "якоря" режима (подъем/сон/время тихого контакта).
+- Снизить количество длинных объяснений в пик эмоций.
+- Отмечать повторяющиеся триггеры: где, когда, после чего начинается вспышка.
+
+Что важно перестать делать:
+- Сравнивать ребенка с другими.
+- Усиливать давление, когда ребенок уже в перегрузе.
+
+Фраза-скрипт:
+"Я вижу, тебе сложно. Я рядом. Бить/кричать нельзя. Давай успокоимся и решим вместе."
+
+Когда лучше обратиться очно:
+- Если вспышки становятся все чаще, есть риск травм, сильный откат сна/аппетита или выраженная тревога у ребенка.`;
 }
 
 function cleanText(value, maxLength) {
@@ -122,16 +323,14 @@ app.post("/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `Ты — заботливый помощник для родителей детей 0-3 лет.
-Не давай медицинских диагнозов.
-Объясняй просто и спокойно.
-Давай практические советы.`
+            content: PARENT_COACH_SYSTEM_PROMPT
           },
           {
             role: "user",
             content: userMessage
           }
-        ]
+        ],
+        temperature: 0.6
       })
     });
 
