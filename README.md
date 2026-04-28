@@ -1,40 +1,57 @@
-# Parent AI Agent
+# Magic Parent AI
 
-## Prerequisites
+AI Personal Fairy Tales is a mobile-first MVP for parents who want personalized bedtime stories that gently support sleep, fears, tantrums, daycare transitions, confidence, jealousy, potty training, and other everyday parenting challenges.
 
-- Node.js 18+ (includes `npm`)
+## Stack
+
+- Next.js App Router
+- Tailwind CSS
+- OpenAI Chat Completions with JSON output
+- Supabase for users, stories, purchases, retention, and analytics
+- Stripe Checkout for paid story unlocks
+
+## Project structure
+
+- `app/page.tsx` - landing page with hero, how it works, examples, testimonials, pricing, FAQ.
+- `app/create/page.tsx` - six-step onboarding flow.
+- `components/StoryCreator.tsx` - client-side story wizard, preview, checkout, and share UX.
+- `app/api/generate-story/route.ts` - validates inputs, calls OpenAI, saves previews to Supabase.
+- `app/api/checkout/route.ts` - creates Stripe Checkout sessions or returns a mock checkout URL.
+- `app/stories/page.tsx` - retention hub for saved stories, weekly recommendations, reminders, and streaks.
+- `app/admin/page.tsx` - founder dashboard UI.
+- `app/api/admin/metrics/route.ts` - Supabase-backed admin metrics endpoint.
+- `lib/prompts.ts` - prompt engineering system and local mock story fallback.
+- `lib/supabase.ts` - Supabase service client helper.
+- `lib/stripe.ts` - Stripe helper and pricing primitives.
+- `supabase/schema.sql` - database schema.
+- `docs/mvp-launch-plan.md` - monetization, growth, and fast launch plan.
 
 ## Setup
 
 1. Install dependencies:
 
-   npm install
+   `npm install`
 
-2. Configure environment variables:
+2. Configure environment:
 
-   cp .env.example .env
+   `cp .env.example .env.local`
 
-   Then (optional) set your OpenAI API key in `.env`:
+3. Add keys as available:
 
-   OPENAI_API_KEY=your_api_key_here
+   - `OPENAI_API_KEY`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `STRIPE_SECRET_KEY`
+   - `STRIPE_PREMIUM_PRICE_ID`
 
-   If `OPENAI_API_KEY` is not set, the app returns a local mock reply from `/chat`.
+4. Run locally:
 
-3. Start the server:
+   `npm run dev`
 
-   npm run start
+If OpenAI or Stripe keys are missing, the app runs in mock mode so the MVP can still be tested end-to-end.
 
-Server runs at `http://localhost:3000`.
+## Quality checks
 
-## Endpoints
-
-- `GET /` - web UI for chatting with assistant.
-- `GET /health` - basic health check.
-- `GET /api` - API metadata.
-- `POST /chat` - accepts JSON `{ "message": "..." }`.
-
-### Example request
-
-curl -X POST http://localhost:3000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message":"How can I soothe a fussy 6-month-old before sleep?"}'
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
