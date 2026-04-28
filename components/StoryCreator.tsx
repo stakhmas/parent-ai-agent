@@ -243,7 +243,7 @@ export function StoryCreator() {
               <h3 className="text-xl font-bold text-slate-950">Ready to make bedtime easier?</h3>
               <p className="mt-2 text-slate-600">
                 We will create a premium story where {payload.childName || "your child"} becomes the hero
-                and practices a calmer way through: {payload.challenge}.
+                and practices a calmer way through {payload.challenge.toLowerCase()}.
               </p>
               <button className="primary-button mt-5 w-full" disabled={isGenerating} onClick={generateStory}>
                 {isGenerating ? "Writing with moonlight..." : "Generate free preview"}
