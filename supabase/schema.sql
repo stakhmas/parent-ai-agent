@@ -22,6 +22,8 @@ create table if not exists stories (
   profile_id uuid references profiles(id) on delete set null,
   child_id uuid references children(id) on delete set null,
   email text,
+  source text not null default 'web',
+  telegram_chat_id bigint,
   child_name text not null,
   child_age int not null,
   child_gender text,
@@ -79,6 +81,19 @@ create table if not exists share_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists telegram_users (
+  id uuid primary key default gen_random_uuid(),
+  telegram_user_id bigint unique not null,
+  chat_id bigint not null,
+  username text,
+  first_name text,
+  last_name text,
+  last_seen_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
 create index if not exists stories_challenge_idx on stories(challenge);
 create index if not exists stories_email_idx on stories(email);
+create index if not exists stories_source_idx on stories(source);
+create index if not exists stories_telegram_chat_idx on stories(telegram_chat_id);
 create index if not exists purchases_status_idx on purchases(status);

@@ -8,6 +8,7 @@
 - `/admin` - founder dashboard concept for users, purchases, conversion, revenue, and top story themes.
 - `/api/generate-story` - validates story inputs, builds the psychology-aware prompt, calls OpenAI when configured, falls back to local mock output, and optionally writes to Supabase.
 - `/api/checkout` - creates a Stripe Checkout session for a premium story; falls back to a mock success URL when Stripe is not configured.
+- `/api/telegram/webhook` - Telegram bot webhook that walks parents through story inputs and sends a preview plus parent guidance.
 - `/api/admin/metrics` - returns demo metrics or reads live Supabase counts when configured.
 
 ## File architecture
@@ -16,9 +17,31 @@
 - `components/StoryCreator.tsx` - client onboarding, generation, preview, checkout, and share experience.
 - `lib/product.ts` - product constants for use cases, pricing, examples, testimonials, and retention.
 - `lib/prompts.ts` - story request schema, prompt engineering system, and local mock generator.
+- `lib/story-engine.ts` - shared story generation and persistence used by web and Telegram.
+- `lib/telegram.ts` - Telegram Bot API helper, update parser, and webhook URL helper.
 - `lib/stripe.ts` - Stripe client and monetization product definitions.
 - `lib/supabase.ts` - Supabase service-role helper.
 - `supabase/schema.sql` - production table schema, indexes, and row-level security starting point.
+
+## Telegram bot flow
+
+The Telegram MVP supports the fastest chat-based launch:
+
+1. Parent sends `/start`.
+2. Bot asks for child name.
+3. Bot asks for age.
+4. Bot offers common challenges as inline buttons or accepts free text.
+5. Bot asks for favorite hero.
+6. Bot offers tone and length buttons.
+7. Bot generates a preview through the shared story engine.
+8. Bot sends the parent guidance note and links to the web app for full story unlock.
+
+Webhook setup:
+
+1. Create a bot in BotFather and copy `TELEGRAM_BOT_TOKEN`.
+2. Set `NEXT_PUBLIC_APP_URL` to the production URL.
+3. Set `TELEGRAM_WEBHOOK_SECRET` to a random string.
+4. Run `npm run telegram:webhook` after deploy.
 
 ## Prompt engineering system
 
