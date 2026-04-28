@@ -154,7 +154,8 @@
       }
 
       .field input,
-      .field textarea {
+      .field textarea,
+      .field select {
         width: 100%;
         border: 1px solid #d3daf2;
         border-radius: 10px;
@@ -169,9 +170,25 @@
       }
 
       .field input:focus,
-      .field textarea:focus {
+      .field textarea:focus,
+      .field select:focus {
         outline: 2px solid rgba(101, 88, 245, 0.24);
         border-color: #b7b1ff;
+      }
+
+      .story-builder {
+        margin: 12px 0 14px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #f9fbff;
+      }
+
+      .story-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 8px;
+        margin: 10px 0;
       }
 
       .consent {
@@ -354,6 +371,51 @@
       <section class="card" id="chat-card">
         <h2>Быстрый демо-чат</h2>
         <p class="subtitle">Используйте чат как бесплатный вход в воронку перед заявкой.</p>
+        <section class="story-builder">
+          <h3>Персональная сказка на ночь</h3>
+          <p class="subtitle">Заполните поля и нажмите кнопку — бот создаст персональную сказку для вашего ребенка.</p>
+          <form id="story-form">
+            <div class="story-grid">
+              <div class="field">
+                <label for="story-child-name">Имя ребенка</label>
+                <input id="story-child-name" placeholder="Например, Маша" />
+              </div>
+              <div class="field">
+                <label for="story-child-age">Возраст</label>
+                <input id="story-child-age" placeholder="Например, 3 года" />
+              </div>
+              <div class="field">
+                <label for="story-challenge">С чем помочь</label>
+                <input id="story-challenge" placeholder="Боится спать одна" />
+              </div>
+              <div class="field">
+                <label for="story-favorite">Любимая тема</label>
+                <input id="story-favorite" placeholder="Единороги, котики..." />
+              </div>
+              <div class="field">
+                <label for="story-tone">Тон сказки</label>
+                <select id="story-tone">
+                  <option value="спокойный">Спокойный</option>
+                  <option value="магический">Магический</option>
+                  <option value="веселый">Веселый</option>
+                  <option value="смелый">Смелый</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="story-length">Длина</label>
+                <select id="story-length">
+                  <option value="короткая">Короткая</option>
+                  <option value="средняя" selected>Средняя</option>
+                  <option value="длинная">Длинная</option>
+                </select>
+              </div>
+            </div>
+            <div class="lead-actions">
+              <button class="btn-primary" id="story-submit-btn" type="submit">Создать персональную сказку</button>
+              <span class="hint" id="story-loading-hint"></span>
+            </div>
+          </form>
+        </section>
         <form id="chat-form">
           <div class="field">
             <label for="message">Ваш вопрос</label>
@@ -399,6 +461,17 @@
       const responseMeta = document.getElementById("response-meta");
       const chatSubmitBtn = document.getElementById("chat-submit-btn");
       const chatLoadingHint = document.getElementById("chat-loading-hint");
+      const storyForm = document.getElementById("story-form");
+      const storySubmitBtn = document.getElementById("story-submit-btn");
+      const storyLoadingHint = document.getElementById("story-loading-hint");
+      const storyFields = {
+        childName: document.getElementById("story-child-name"),
+        childAge: document.getElementById("story-child-age"),
+        challenge: document.getElementById("story-challenge"),
+        favorite: document.getElementById("story-favorite"),
+        tone: document.getElementById("story-tone"),
+        length: document.getElementById("story-length")
+      };
 
       function cleanText(value) {
         return typeof value === "string" ? value.trim() : "";
@@ -473,9 +546,64 @@
         chatLoadingHint.textContent = isLoading ? "Готовим ответ" : "";
       }
 
+      function setStoryLoading(isLoading) {
+        storySubmitBtn.disabled = isLoading;
+        storySubmitBtn.textContent = isLoading ? "Создаем..." : "Создать персональную сказку";
+        storyLoadingHint.textContent = isLoading ? "Генерируем сказку" : "";
+      }
+
       function setChatOutput(text, isError) {
         responseBox.classList.toggle("error", Boolean(isError));
         responseBox.textContent = text;
+      }
+
+      async function sendChatMessage(message, source) {
+        if (!message) {
+          setChatOutput("Введите вопрос перед отправкой.", true);
+          responseMeta.textContent = "";
+          return;
+        }
+        if (source === "story") {
+          setStoryLoading(true);
+          responseMeta.textContent = "Создаем персональную сказку...";
+        } else {
+          setChatLoading(true);
+          responseMeta.textContent = "";
+        }
+        setChatOutput("Готовим ответ...", false);
+        try {
+          const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Ошибка запроса");
+          }
+          setChatOutput(data.reply || "Ответ пустой.", false);
+          const modeText = data.mode === "mock" ? "Режим: локальный mock (без OpenAI ключа)" : "Режим: OpenAI API";
+          responseMeta.textContent = source === "story" ? `${modeText} · персональная сказка` : modeText;
+        } catch (error) {
+          setChatOutput(error.message || "Не удалось получить ответ.", true);
+          responseMeta.textContent = "Попробуйте повторить запрос.";
+        } finally {
+          if (source === "story") {
+            setStoryLoading(false);
+          } else {
+            setChatLoading(false);
+          }
+        }
+      }
+
+      function buildStoryPrompt() {
+        const childName = cleanText(storyFields.childName.value) || "малыша";
+        const childAge = cleanText(storyFields.childAge.value) || "3 года";
+        const challenge = cleanText(storyFields.challenge.value) || "засыпает с тревогой";
+        const favorite = cleanText(storyFields.favorite.value) || "добрых зверят";
+        const tone = cleanText(storyFields.tone.value) || "спокойный";
+        const length = cleanText(storyFields.length.value) || "средняя";
+        return `Сочини персональную сказку на ночь для ребенка ${childName}, ${childAge}, текущая сложность: ${challenge}, любимая тема: ${favorite}, тон: ${tone}, длина: ${length}.`;
       }
 
       function scrollToTarget(targetId) {
@@ -538,33 +666,14 @@
       chatForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const message = cleanText(messageInput.value);
-        if (!message) {
-          setChatOutput("Введите вопрос перед отправкой.", true);
-          responseMeta.textContent = "";
-          return;
-        }
-        setChatLoading(true);
-        setChatOutput("Готовим ответ...", false);
-        responseMeta.textContent = "";
-        try {
-          const response = await fetch("/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message })
-          });
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data.error || "Ошибка запроса");
-          }
-          setChatOutput(data.reply || "Ответ пустой.", false);
-          responseMeta.textContent =
-            data.mode === "mock" ? "Режим: локальный mock (без OpenAI ключа)" : "Режим: OpenAI API";
-        } catch (error) {
-          setChatOutput(error.message || "Не удалось получить ответ.", true);
-          responseMeta.textContent = "Попробуйте повторить запрос.";
-        } finally {
-          setChatLoading(false);
-        }
+        await sendChatMessage(message, "chat");
+      });
+
+      storyForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const storyPrompt = buildStoryPrompt();
+        messageInput.value = storyPrompt;
+        await sendChatMessage(storyPrompt, "story");
       });
 
       renderUtmChip(getAttribution());
