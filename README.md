@@ -67,6 +67,16 @@ If OpenAI or Stripe keys are missing, the app runs in mock mode so the MVP can s
 
 Telegram will call `/api/telegram/webhook`. In local/mock mode, webhook requests can be tested without a bot token; messages are logged as successful mock sends.
 
+## Vercel deploy
+
+1. Open `https://vercel.com/new`.
+2. Import this GitHub repository.
+3. Use the default Next.js settings.
+4. Add the environment variables from `.env.local`.
+5. Deploy and copy the production URL.
+6. Set `NEXT_PUBLIC_APP_URL` to that production URL in Vercel.
+7. Run `npm run telegram:set-webhook` from a terminal with `.env.local`, or run the same command in a Vercel-connected environment.
+
 ## Quality checks
 
 - `npm run typecheck`
