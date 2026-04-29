@@ -20,9 +20,9 @@ type SaveStoryOptions = {
 
 export function parentMessageToText(parentMessage: StoryResponse["parentMessage"]) {
   return [
-    `Why this story helps: ${parentMessage.whyItHelps}`,
-    `What the behavior may mean: ${parentMessage.behaviorMeaning}`,
-    `Try tonight: ${parentMessage.realLifeSteps.join(" ")}`
+    `Почему эта сказка помогает: ${parentMessage.whyItHelps}`,
+    `Что может означать поведение: ${parentMessage.behaviorMeaning}`,
+    `Что попробовать сегодня: ${parentMessage.realLifeSteps.join(" ")}`
   ].join("\n\n");
 }
 

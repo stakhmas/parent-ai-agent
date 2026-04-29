@@ -38,88 +38,94 @@ export type StoryResponse = {
 };
 
 const lengthGuide = {
-  short: "650-850 words total",
-  medium: "950-1,250 words total",
-  long: "1,500-1,900 words total"
+  short: "450-650 слов",
+  medium: "750-1 000 слов",
+  long: "1 200-1 600 слов"
 };
 
 const toneGuide = {
-  magical: "soft wonder, moonlight, tiny enchantments, protective warmth",
-  funny: "gentle humor, silly sidekicks, playful pacing without overstimulation",
-  calming: "slow rhythm, sensory grounding, low stakes, sleep-ready ending",
-  brave: "courage, mastery, self-trust, emotionally safe challenge resolution"
+  magical: "мягкое волшебство, лунный свет, маленькие чудеса, ощущение защиты",
+  funny: "бережный юмор, забавные помощники, легкость без перевозбуждения",
+  calming: "медленный ритм, телесное успокоение, низкое напряжение, сонный финал",
+  brave: "смелость, уверенность, поддержка, безопасное преодоление"
 };
 
 export function buildStorySystemPrompt() {
-  return `You are Magic Parent AI, a premium story therapist for families.
-Create personalized bedtime stories that help children process normal parenting challenges through metaphor.
+  return `Ты Magic Parent AI, премиальный помощник для родителей и автор терапевтических сказок.
+Всегда отвечай на русском языке, даже если входные параметры или названия проблем написаны по-английски.
+Создавай персональные сказки на ночь, которые через метафору помогают ребенку мягко прожить обычные детские трудности.
 
-Rules:
-- Never diagnose, shame, threaten, moralize, or use fear.
-- Do not provide medical, legal, or emergency advice.
-- Keep the child emotionally safe and heroic.
-- The story must feel premium, specific, lyrical, and non-generic.
-- Resolve the challenge through connection, practice, courage, and secure attachment.
-- End with a cozy bedtime image.
-- Parent guidance must be practical, compassionate, and brief.
-- Return strict JSON only with keys: title, preview, fullStory, parentMessage, shareText, weeklyRecommendation.
-- parentMessage must include whyItHelps, behaviorMeaning, and realLifeSteps array.`;
+Правила:
+- Не ставь диагнозы, не стыди, не угрожай, не морализируй и не пугай.
+- Не давай медицинских, юридических или экстренных рекомендаций.
+- Ребенок всегда эмоционально в безопасности и является героем сказки.
+- Сказка должна звучать премиально, тепло, конкретно, образно и не шаблонно.
+- Трудность решается через контакт, тренировку навыка, смелость и надежную привязанность.
+- Заверши уютной сценой отхода ко сну.
+- Сообщение для родителя должно быть коротким, практичным и заботливым.
+- Верни только строгий JSON с ключами: title, preview, fullStory, parentMessage, shareText, weeklyRecommendation.
+- parentMessage должен включать whyItHelps, behaviorMeaning и массив realLifeSteps.`;
 }
 
 export function buildStoryUserPrompt(input: StoryRequest) {
   const pronouns =
     input.gender === "girl"
-      ? "she/her"
+      ? "девочка, местоимения она/ее"
       : input.gender === "boy"
-        ? "he/him"
-        : "they/them";
+        ? "мальчик, местоимения он/его"
+        : "пол не указан, используй нейтральные формулировки";
 
-  return `Create a personalized parenting story.
+  return `Создай персональную сказку для родителя и ребенка.
 
-Child:
-- Name: ${input.childName}
-- Age: ${input.age}
-- Pronouns: ${pronouns}
-- Current challenge: ${input.challenge}
-- Favorite animal/character/hero: ${input.favoriteHero}
-- Tone: ${input.tone} (${toneGuide[input.tone]})
-- Length: ${input.length} (${lengthGuide[input.length]})
+Ребенок:
+- Имя: ${input.childName}
+- Возраст: ${input.age}
+- Пол/местоимения: ${pronouns}
+- Текущая трудность: ${input.challenge}
+- Любимый герой, животное или игрушка: ${input.favoriteHero}
+- Тон: ${input.tone} (${toneGuide[input.tone]})
+- Длина: ${input.length} (${lengthGuide[input.length]})
 
-Story requirements:
-1. Open with a vivid bedtime-friendly scene.
-2. Make ${input.childName} the hero, not a passive listener.
-3. Use ${input.favoriteHero} as a meaningful companion or symbol.
-4. Mirror the real-life challenge through a magical problem that can be solved.
-5. Include one repeated calming phrase parents can reuse.
-6. Show a healing arc: feeling -> naming -> trying -> support -> mastery -> rest.
-7. Avoid generic phrases like "once upon a time" unless transformed.
-8. The preview must be the first emotionally strong 120-180 words and end with an unlock tease.
-9. fullStory must contain the complete premium story.
-10. Parent message must explain why the story helps, what the behavior may mean, and 3-5 real-life steps.
-11. shareText must be a short viral line a parent would share.
-12. weeklyRecommendation must recommend the next story theme for retention.`;
+Требования к сказке:
+1. Начни с яркой, но спокойной сцены перед сном.
+2. Сделай ${input.childName} главным героем, а не пассивным слушателем.
+3. Используй ${input.favoriteHero} как важного спутника или символ поддержки.
+4. Отрази реальную трудность через волшебную проблему, которую можно мягко решить.
+5. Добавь одну повторяющуюся успокаивающую фразу, которую родитель сможет повторять в жизни.
+6. Покажи исцеляющую дугу: чувство -> называние -> маленькая попытка -> поддержка -> успех -> отдых.
+7. Избегай шаблонного "жили-были", если оно не звучит свежо.
+8. preview должен быть первым эмоционально сильным фрагментом на 120-180 слов и завершаться мягким приглашением открыть полную историю.
+9. fullStory должен содержать полную премиальную сказку.
+10. parentMessage должен объяснить, почему сказка помогает, что может означать поведение, и дать 3-5 реальных шагов.
+11. shareText должен быть короткой фразой, которой родитель захочет поделиться.
+12. weeklyRecommendation должен предложить следующую тему сказки для возвращения родителя.`;
 }
 
 export function mockStory(input: StoryRequest): StoryResponse {
-  const hero = input.favoriteHero || "little moon fox";
+  const hero = input.favoriteHero || "лунный лисенок";
+  const challenge = translateChallenge(input.challenge);
+  const verbs =
+    input.gender === "girl"
+      ? { hid: "спрятала", heard: "услышала", took: "сделала", understood: "поняла", sat: "села", tried: "попробовала", whispered: "прошептала", closed: "закрыла", felt: "почувствовала" }
+      : { hid: "спрятал", heard: "услышал", took: "сделал", understood: "понял", sat: "сел", tried: "попробовал", whispered: "прошептал", closed: "закрыл", felt: "почувствовал" };
   return {
-    title: `${input.childName} and the Moonlit ${capitalize(hero)}`,
-    preview: `${input.childName} tucked a tiny silver star into a pajama pocket and listened as the room grew soft and blue. Tonight, ${hero} had arrived with whiskers full of moon-dust and a very important problem: the Sleepy Lantern in the Cloud Garden would not glow until a brave child taught it how to feel safe. ${input.childName} took one small breath and whispered, "I am safe, I am loved, I can try." Together they stepped onto a ribbon of starlight, where every worry became a firefly waiting to be understood. Unlock the full story to follow ${input.childName}'s whole magical journey to courage and rest.`,
-    fullStory: `${input.childName} tucked a tiny silver star into a pajama pocket and listened as the room grew soft and blue. Tonight, ${hero} arrived with whiskers full of moon-dust and a very important problem: the Sleepy Lantern in the Cloud Garden would not glow until a brave child taught it how to feel safe.\n\n${input.childName} took one small breath and whispered, "I am safe, I am loved, I can try." The words made a warm circle around the bed. Together, ${input.childName} and ${hero} followed a ribbon of starlight to a garden where every cloud looked like a pillow.\n\nAt the center of the garden sat the Sleepy Lantern, hiding behind a leaf. "I want to shine," it said, "but ${input.challenge.toLowerCase()} feels too big." ${input.childName} understood that feeling. Instead of pushing the lantern, ${input.childName} sat beside it, counted three quiet breaths, and told it about one small brave thing to try.\n\nThe lantern blinked. ${hero} did a tiny dance. ${input.childName} tried the brave thing too: one breath, one soft word, one little step. The garden brightened from blue to gold. "I am safe, I am loved, I can try," ${input.childName} whispered again.\n\nBy the time the moon climbed high, the lantern was glowing like honey. It promised to remember ${input.childName}'s brave lesson every night. ${hero} carried ${input.childName} home on a cloud no bigger than a blanket. The room was still waiting, cozy and kind. ${input.childName} closed sleepy eyes, knowing that courage can be small, soft, and enough.`,
+    title: `${input.childName} и ${capitalize(hero)} под лунным одеялом`,
+    preview: `${input.childName} ${verbs.hid} маленькую серебряную звездочку в кармашек пижамы и ${verbs.heard}, как комната стала тихой-тихой, будто ее укрыли синим бархатным пледом. В этот вечер ${hero} пришел с усами, припорошенными лунной пыльцой, и принес важную просьбу: в Облачном саду погас Сонный фонарик, потому что ему было трудно справиться с тем, что называется "${challenge}". ${input.childName} ${verbs.took} один мягкий вдох и ${verbs.whispered}: "Я в безопасности, меня любят, я могу попробовать". От этих слов вокруг кровати зажегся теплый круг света. Вместе они ступили на ленточку звездного сияния, где каждая тревога превращалась в светлячка, которого можно понять. Откройте полную историю, чтобы пройти весь путь ${input.childName} к спокойствию и сну.`,
+    fullStory: `${input.childName} ${verbs.hid} маленькую серебряную звездочку в кармашек пижамы и ${verbs.heard}, как комната стала тихой-тихой, будто ее укрыли синим бархатным пледом. В этот вечер ${hero} пришел с усами, припорошенными лунной пыльцой, и принес важную просьбу: в Облачном саду погас Сонный фонарик, потому что ему было трудно справиться с тем, что называется "${challenge}".\n\n${input.childName} ${verbs.took} один мягкий вдох и ${verbs.whispered}: "Я в безопасности, меня любят, я могу попробовать". Эти слова стали теплым кругом вокруг кровати. Вместе ${input.childName} и ${hero} пошли по ленточке звездного света туда, где облака были похожи на подушки.\n\nВ середине сада сидел Сонный фонарик и прятался за большим листом. "Я хочу светить, - сказал он, - но это чувство кажется слишком большим". ${input.childName} ${verbs.understood} фонарик. Вместо того чтобы торопить его, ${input.childName} ${verbs.sat} рядом, посчитал три тихих вдоха и предложил попробовать один маленький шаг.\n\nФонарик моргнул. ${hero} смешно подпрыгнул на месте. ${input.childName} тоже ${verbs.tried}: один вдох, одно доброе слово, один маленький шаг. Сад начал светлеть - сначала голубым, потом медовым, потом теплым золотым светом. "Я в безопасности, меня любят, я могу попробовать", - снова ${verbs.whispered} ${input.childName}.\n\nКогда луна поднялась высоко, Сонный фонарик уже сиял так мягко, что даже самые беспокойные светлячки улеглись спать. Он пообещал помнить урок ${input.childName}: смелость не обязана быть громкой. Иногда она маленькая, теплая и очень настоящая.\n\n${hero} проводил ${input.childName} домой на облачке размером с одеяло. Комната ждала их спокойная, знакомая и добрая. ${input.childName} ${verbs.closed} глаза и ${verbs.felt}: ночь может быть тихой, а сердце - смелым. И сон пришел легко, как пушинка на ладонь.`,
     parentMessage: {
       whyItHelps:
-        "The story turns the challenge into a safe symbolic problem, letting your child practice courage without feeling criticized.",
+        "Сказка превращает трудность в безопасный образ, поэтому ребенок может потренировать спокойствие и смелость без критики и давления.",
       behaviorMeaning:
-        "This behavior can be a sign your child is asking for connection, predictability, autonomy, or reassurance while their nervous system matures.",
+        "Такое поведение часто означает, что ребенку нужны контакт, предсказуемость, чувство контроля или дополнительное подтверждение безопасности.",
       realLifeSteps: [
-        "Reuse the story phrase during the real moment: I am safe, I am loved, I can try.",
-        "Name the feeling before correcting the behavior.",
-        "Offer one small next step instead of a big demand.",
-        "Praise the effort, not only the result."
+        "Повторяйте фразу из сказки в реальной ситуации: Я в безопасности, меня любят, я могу попробовать.",
+        "Сначала назовите чувство ребенка, а уже потом предлагайте действие.",
+        "Предлагайте один маленький следующий шаг вместо большого требования.",
+        "Хвалите усилие, а не только результат."
       ]
     },
-    shareText: `I made ${input.childName} a personalized bedtime story with Magic Parent AI.`,
-    weeklyRecommendation: `Next, create a ${input.tone} confidence story where ${input.childName} practices the same skill in a new setting.`
+    shareText: `Я создала персональную сказку на ночь для ${input.childName} в Magic Parent AI.`,
+    weeklyRecommendation: `В следующий раз создайте сказку про уверенность, где ${input.childName} потренирует этот навык в новой ситуации.`
   };
 }
 
@@ -134,4 +140,23 @@ function capitalize(value: string) {
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+function translateChallenge(value: string) {
+  const translations: Record<string, string> = {
+    "Afraid to sleep alone": "страх спать одному",
+    "Bedtime resistance": "нежелание ложиться спать",
+    Tantrums: "истерики",
+    "Biting or hitting": "кусается или дерется",
+    "Jealous of sibling": "ревность к брату или сестре",
+    "Fear of daycare": "страх детского сада",
+    "Separation anxiety": "тревога расставания",
+    "Doctor fear": "страх врача",
+    "Confidence building": "развитие уверенности",
+    "Moving house": "переезд",
+    "Giving up pacifier": "отказ от соски",
+    "Potty training": "приучение к горшку"
+  };
+
+  return translations[value] ?? value;
 }
