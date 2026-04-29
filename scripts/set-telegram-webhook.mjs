@@ -1,3 +1,26 @@
+import { existsSync, readFileSync } from "node:fs";
+
+function loadLocalEnv() {
+  if (!existsSync(".env.local")) {
+    return;
+  }
+
+  const lines = readFileSync(".env.local", "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex);
+    const value = trimmed.slice(separatorIndex + 1);
+    process.env[key] ||= value;
+  }
+}
+
+loadLocalEnv();
+
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 const secret = process.env.TELEGRAM_WEBHOOK_SECRET;

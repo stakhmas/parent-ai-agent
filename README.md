@@ -63,7 +63,7 @@ If OpenAI or Stripe keys are missing, the app runs in mock mode so the MVP can s
 4. Set `NEXT_PUBLIC_APP_URL` to the deployed app URL, for example `https://your-domain.com`.
 5. Register the webhook:
 
-   `npm run telegram:webhook`
+   `npm run telegram:set-webhook`
 
 Telegram will call `/api/telegram/webhook`. In local/mock mode, webhook requests can be tested without a bot token; messages are logged as successful mock sends.
 
