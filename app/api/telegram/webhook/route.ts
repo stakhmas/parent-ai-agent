@@ -184,7 +184,7 @@ async function finishStory(chatId: number, session: TelegramSession) {
 
   await sendTelegramMessage({
     chatId,
-    text: `*${escapeMarkdown(result.title)}*\n\n${escapeMarkdown(result.preview)}`,
+    text: `*${escapeMarkdown(result.title)}*\n\n${escapeMarkdown(result.fullStory)}`,
     parseMode: "MarkdownV2"
   });
   await sendTelegramMessage({
