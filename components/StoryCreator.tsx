@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Lock, Share2, Sparkles } from "lucide-react";
-import { challenges, lengthOptions, toneOptions } from "@/lib/product";
+import { CUSTOM_CHALLENGE, challenges, lengthOptions, toneOptions } from "@/lib/product";
 import type { StoryPayload } from "@/lib/prompts";
 
 type GenderValue = StoryPayload["gender"];
@@ -43,11 +43,12 @@ export function StoryCreator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [error, setError] = useState("");
+  const [challengeMode, setChallengeMode] = useState<"preset" | "custom">("preset");
 
   const canContinue = useMemo(() => {
     if (step === 0) return payload.childName.trim().length > 1;
     if (step === 1) return Number(payload.age) >= 2 && Number(payload.age) <= 10;
-    if (step === 2) return payload.challenge.trim().length > 2;
+    if (step === 2) return payload.challenge.trim().length > 2 && payload.challenge !== CUSTOM_CHALLENGE;
     if (step === 3) return payload.favoriteHero.trim().length > 1;
     return true;
   }, [payload, step]);
@@ -183,8 +184,16 @@ export function StoryCreator() {
             <Field label="What challenge should the story gently help with?">
               <select
                 className="input"
-                value={payload.challenge}
-                onChange={(event) => updateField("challenge", event.target.value)}
+                value={challengeMode === "custom" ? CUSTOM_CHALLENGE : payload.challenge}
+                onChange={(event) => {
+                  if (event.target.value === CUSTOM_CHALLENGE) {
+                    setChallengeMode("custom");
+                    updateField("challenge", "");
+                    return;
+                  }
+                  setChallengeMode("preset");
+                  updateField("challenge", event.target.value);
+                }}
               >
                 {challenges.map((challenge) => (
                   <option key={challenge}>{challenge}</option>
@@ -192,8 +201,20 @@ export function StoryCreator() {
               </select>
               <textarea
                 className="input mt-3 min-h-28"
-                placeholder="Add context: bedtime tears, fear of the dark, new baby..."
-                onChange={(event) => updateField("challenge", event.target.value || payload.challenge)}
+                placeholder={
+                  challengeMode === "custom"
+                    ? "Опишите свою ситуацию: ребенок боится темноты после переезда, не хочет идти в садик, ревнует к малышу..."
+                    : "Можно уточнить детали: слезы перед сном, страх темноты, новый малыш..."
+                }
+                value={challengeMode === "custom" ? payload.challenge : undefined}
+                onChange={(event) => {
+                  const value = event.target.value.trimStart();
+                  if (challengeMode === "custom") {
+                    updateField("challenge", value);
+                  } else if (value) {
+                    updateField("challenge", value);
+                  }
+                }}
               />
             </Field>
           )}

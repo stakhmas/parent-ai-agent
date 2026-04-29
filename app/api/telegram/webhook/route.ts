@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { challenges } from "@/lib/product";
+import { CUSTOM_CHALLENGE, challenges } from "@/lib/product";
 import { storyRequestSchema, type StoryPayload } from "@/lib/prompts";
 import { createStory } from "@/lib/story-engine";
 import {
@@ -15,7 +15,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type TelegramSession = {
-  step: "childName" | "age" | "challenge" | "favoriteHero" | "tone" | "length" | "done";
+  step:
+    | "childName"
+    | "age"
+    | "challenge"
+    | "customChallenge"
+    | "favoriteHero"
+    | "tone"
+    | "length"
+    | "done";
   payload: Partial<StoryPayload>;
 };
 
@@ -80,12 +88,15 @@ function challengeKeyboard() {
   };
 
   return keyboard(
-    challenges.slice(0, 10).map((challenge) => [
-      {
-        text: labels[challenge] ?? challenge,
-        callback_data: `challenge:${challenge}`
-      }
-    ])
+    [
+      ...challenges.slice(0, 10).map((challenge) => [
+        {
+          text: labels[challenge] ?? challenge,
+          callback_data: `challenge:${challenge}`
+        }
+      ]),
+      [{ text: "Своя ситуация", callback_data: `challenge:${CUSTOM_CHALLENGE}` }]
+    ]
   );
 }
 
@@ -242,6 +253,16 @@ async function handleText(chatId: number, text: string, from?: TelegramFrom) {
     return;
   }
 
+  if (session.step === "customChallenge") {
+    payload.challenge = text.trim();
+    saveSession(chatId, { step: "favoriteHero", payload });
+    await sendTelegramMessage({
+      chatId,
+      text: "Спасибо, возьму именно эту ситуацию за основу. Любимый герой, животное или игрушка ребенка?"
+    });
+    return;
+  }
+
   if (session.step === "favoriteHero") {
     payload.favoriteHero = text.trim();
     saveSession(chatId, { step: "tone", payload });
@@ -267,7 +288,18 @@ async function handleCallback(chatId: number, callbackData: string, callbackId: 
   const payload = { ...session.payload };
 
   if (callbackData.startsWith("challenge:")) {
-    payload.challenge = callbackData.replace("challenge:", "");
+    const challenge = callbackData.replace("challenge:", "");
+    if (challenge === CUSTOM_CHALLENGE) {
+      saveSession(chatId, { step: "customChallenge", payload });
+      await sendTelegramMessage({
+        chatId,
+        text:
+          "Опишите свою ситуацию своими словами. Например: ребенок плачет, когда мама выходит из комнаты, и боится оставаться один вечером."
+      });
+      return;
+    }
+
+    payload.challenge = challenge;
     saveSession(chatId, { step: "favoriteHero", payload });
     await sendTelegramMessage({ chatId, text: "Любимый герой, животное или игрушка ребенка? Например: лунный лис." });
     return;

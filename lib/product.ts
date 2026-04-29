@@ -1,3 +1,5 @@
+export const CUSTOM_CHALLENGE = "Своя ситуация";
+
 export const challenges = [
   "Afraid to sleep alone",
   "Bedtime resistance",
@@ -10,7 +12,8 @@ export const challenges = [
   "Confidence building",
   "Moving house",
   "Giving up pacifier",
-  "Potty training"
+  "Potty training",
+  CUSTOM_CHALLENGE
 ];
 
 export const challengeExamples = challenges;
