@@ -76,6 +76,7 @@ Telegram will call `/api/telegram/webhook`. In local/mock mode, webhook requests
 5. Deploy and copy the production URL.
 6. Set `NEXT_PUBLIC_APP_URL` to that production URL in Vercel.
 7. Run `npm run telegram:set-webhook` from a terminal with `.env.local`, or run the same command in a Vercel-connected environment.
+8. If you cannot run terminal commands, open `/api/telegram/set-webhook?secret=YOUR_TELEGRAM_WEBHOOK_SECRET` on the production domain once.
 
 ## Quality checks
 
