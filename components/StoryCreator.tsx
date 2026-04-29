@@ -29,19 +29,15 @@ const initialPayload: StoryPayload = {
   gender: "",
   challenge: "Afraid to sleep alone",
   favoriteHero: "",
+  childLikes: "",
+  childFears: "",
+  storyFormat: "bedtime",
   tone: "magical",
   length: "medium",
   parentEmail: ""
 };
 
-const steps = [
-  "Child",
-  "Age",
-  "Challenge",
-  "Hero",
-  "Tone",
-  "Generate"
-];
+const steps = ["Child", "Age", "Challenge", "World", "Format", "Generate"];
 
 export function StoryCreator() {
   const [payload, setPayload] = useState<StoryPayload>(initialPayload);
@@ -258,18 +254,40 @@ export function StoryCreator() {
           )}
 
           {step === 3 && (
-            <Field label="Favorite animal, toy, or character">
+            <Field label="Favorite hero, interests, and fears">
               <input
                 className="input"
                 placeholder="A brave moon fox, a blue dinosaur, a plush bunny..."
                 value={payload.favoriteHero}
                 onChange={(event) => updateField("favoriteHero", event.target.value)}
               />
+              <textarea
+                className="input mt-3 min-h-20"
+                placeholder="Что любит ребенок? Космос, динозавров, машинки, котиков, музыку..."
+                value={payload.childLikes}
+                onChange={(event) => updateField("childLikes", event.target.value)}
+              />
+              <textarea
+                className="input mt-3 min-h-20"
+                placeholder="Чего боится или что особенно важно не усиливать? Темнота, громкие звуки, разлука..."
+                value={payload.childFears}
+                onChange={(event) => updateField("childFears", event.target.value)}
+              />
             </Field>
           )}
 
           {step === 4 && (
-            <Field label="Choose a tone and length">
+            <Field label="Choose format, tone and length">
+              <select
+                className="input mb-4"
+                value={payload.storyFormat}
+                onChange={(event) => updateField("storyFormat", event.target.value as StoryPayload["storyFormat"])}
+              >
+                <option value="bedtime">Перед сном</option>
+                <option value="therapy">Терапевтическая</option>
+                <option value="funny">Веселая</option>
+                <option value="motivational">Мотивационная</option>
+              </select>
               <div className="grid grid-cols-2 gap-3">
                 {toneOptions.map((tone) => (
                   <button
@@ -384,7 +402,7 @@ export function StoryCreator() {
               )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <button className="primary-button justify-center" disabled={isCheckingOut} onClick={unlockStory}>
-                  {isCheckingOut ? "Opening checkout..." : "Unlock full story"}
+                  {isCheckingOut ? "Opening checkout..." : "Unlock premium story"}
                 </button>
                 <button
                   className="secondary-button justify-center border-white/20 bg-white/10 text-white"
@@ -398,6 +416,12 @@ export function StoryCreator() {
                   <Share2 className="h-4 w-4" /> Share story
                 </button>
               </div>
+              <article className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+                <h3 className="font-black">Premium unlock</h3>
+                <p className="mt-2 text-sm leading-6">
+                  Full therapeutic story, 7-day story plan, audio narration, illustration, and a parent action card.
+                </p>
+              </article>
               {result.mock && <p className="text-xs text-slate-400">Local mock mode: add OpenAI keys for live stories.</p>}
             </div>
           )}

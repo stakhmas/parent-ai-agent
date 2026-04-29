@@ -23,6 +23,9 @@ type TelegramSession = {
     | "challenge"
     | "customChallenge"
     | "favoriteHero"
+    | "childLikes"
+    | "childFears"
+    | "storyFormat"
     | "tone"
     | "length"
     | "done";
@@ -53,6 +56,9 @@ function createDefaultSession(): TelegramSession {
     step: "childName",
     payload: {
       gender: "not-specified",
+      childLikes: "",
+      childFears: "",
+      storyFormat: "bedtime",
       tone: "magical",
       length: "short",
       parentEmail: ""
@@ -67,7 +73,8 @@ function getSession(chatId: number) {
 function saveSession(chatId: number, session: TelegramSession) {
   inMemorySessions.set(chatId, {
     step: session.step,
-    payload: { ...session.payload }
+    payload: { ...session.payload },
+    lastStory: session.lastStory ? { ...session.lastStory } : undefined
   });
 }
 
@@ -115,6 +122,19 @@ function toneKeyboard() {
     [
       { text: "Спокойная", callback_data: "tone:calming" },
       { text: "Смелая", callback_data: "tone:brave" }
+    ]
+  ]);
+}
+
+function formatKeyboard() {
+  return keyboard([
+    [
+      { text: "Перед сном", callback_data: "format:bedtime" },
+      { text: "Терапия", callback_data: "format:therapy" }
+    ],
+    [
+      { text: "Веселая", callback_data: "format:funny" },
+      { text: "Мотивация", callback_data: "format:motivational" }
     ]
   ]);
 }
@@ -197,7 +217,8 @@ async function finishStory(chatId: number, session: TelegramSession) {
 
   await sendTelegramMessage({
     chatId,
-    text: "Что хотите сделать дальше?",
+    text:
+      "Premium: могу сделать 7-дневную серию терапевтических сказок, аудиосказку, иллюстрации и версию «сказка от мамы/папы». Что хотите сделать дальше?",
     replyMarkup: keyboard([
       [
         {
@@ -286,8 +307,28 @@ async function handleText(chatId: number, text: string, from?: TelegramFrom) {
 
   if (session.step === "favoriteHero") {
     payload.favoriteHero = text.trim();
-    saveSession(chatId, { step: "tone", payload });
-    await sendTelegramMessage({ chatId, text: "Выберите тон сказки:", replyMarkup: toneKeyboard() });
+    saveSession(chatId, { step: "childLikes", payload });
+    await sendTelegramMessage({
+      chatId,
+      text: "Что ребенок любит? Например: динозавров, космос, машинки, котиков, музыку. Можно написать одним сообщением."
+    });
+    return;
+  }
+
+  if (session.step === "childLikes") {
+    payload.childLikes = text.trim();
+    saveSession(chatId, { step: "childFears", payload });
+    await sendTelegramMessage({
+      chatId,
+      text: "Чего ребенок боится или что важно не усиливать в сказке? Например: темноты, громких звуков, разлуки."
+    });
+    return;
+  }
+
+  if (session.step === "childFears") {
+    payload.childFears = text.trim();
+    saveSession(chatId, { step: "storyFormat", payload });
+    await sendTelegramMessage({ chatId, text: "Выберите формат сказки:", replyMarkup: formatKeyboard() });
     return;
   }
 
@@ -352,6 +393,13 @@ async function handleCallback(chatId: number, callbackData: string, callbackId: 
     payload.challenge = challenge;
     saveSession(chatId, { step: "favoriteHero", payload });
     await sendTelegramMessage({ chatId, text: "Любимый герой, животное или игрушка ребенка? Например: лунный лис." });
+    return;
+  }
+
+  if (callbackData.startsWith("format:")) {
+    payload.storyFormat = callbackData.replace("format:", "") as StoryPayload["storyFormat"];
+    saveSession(chatId, { step: "tone", payload });
+    await sendTelegramMessage({ chatId, text: "Выберите тон сказки:", replyMarkup: toneKeyboard() });
     return;
   }
 

@@ -35,6 +35,13 @@ export const lengthOptions = [
 
 export const lengths = lengthOptions;
 
+export const storyFormatOptions = [
+  { value: "bedtime", label: "Перед сном", description: "Спокойная сказка с мягким финалом" },
+  { value: "therapy", label: "Терапевтическая", description: "Глубже работает с конкретной проблемой" },
+  { value: "funny", label: "Веселая", description: "Больше юмора и легкости" },
+  { value: "motivational", label: "Мотивационная", description: "Про смелость, уверенность и действие" }
+] as const;
+
 export const storyExamples = [
   {
     title: "Luna and the Sleepy Moon Fox",
