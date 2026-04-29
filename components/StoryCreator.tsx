@@ -9,11 +9,18 @@ type GenderValue = StoryPayload["gender"];
 
 type StoryResponse = {
   storyId?: string;
+  title?: string;
   preview: string;
   fullStory?: string;
   parentMessage: string;
   shareText: string;
   mock?: boolean;
+};
+
+type IllustrationResponse = {
+  image: string;
+  prompt: string;
+  mode: "gemini" | "mock";
 };
 
 const initialPayload: StoryPayload = {
@@ -42,6 +49,8 @@ export function StoryCreator() {
   const [result, setResult] = useState<StoryResponse | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [illustration, setIllustration] = useState<IllustrationResponse | null>(null);
   const [error, setError] = useState("");
   const [challengeMode, setChallengeMode] = useState<"preset" | "custom">("preset");
 
@@ -71,6 +80,7 @@ export function StoryCreator() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Story generation failed.");
       setResult(data);
+      setIllustration(null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to create story.");
     } finally {
@@ -103,6 +113,34 @@ export function StoryCreator() {
       setError(caught instanceof Error ? caught.message : "Unable to start checkout.");
     } finally {
       setIsCheckingOut(false);
+    }
+  }
+
+  async function generateIllustration() {
+    if (!result) return;
+
+    setError("");
+    setIsGeneratingImage(true);
+    try {
+      const response = await fetch("/api/generate-illustration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: result.title,
+          preview: result.preview,
+          childName: payload.childName,
+          challenge: payload.challenge,
+          favoriteHero: payload.favoriteHero,
+          tone: payload.tone
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Illustration generation failed.");
+      setIllustration(data);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to create illustration.");
+    } finally {
+      setIsGeneratingImage(false);
     }
   }
 
@@ -329,9 +367,32 @@ export function StoryCreator() {
                 <h3 className="font-bold text-amber-100">Message for Parent</h3>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-200">{result.parentMessage}</p>
               </article>
+              {illustration && (
+                <article className="rounded-3xl bg-white p-4 text-slate-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    alt="Story illustration"
+                    className="aspect-square w-full rounded-2xl object-cover"
+                    src={illustration.image}
+                  />
+                  <p className="mt-3 text-xs text-slate-500">
+                    {illustration.mode === "mock"
+                      ? "Mock preview: add GEMINI_API_KEY for AI illustrations."
+                      : "AI illustration generated for this story."}
+                  </p>
+                </article>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <button className="primary-button justify-center" disabled={isCheckingOut} onClick={unlockStory}>
                   {isCheckingOut ? "Opening checkout..." : "Unlock full story"}
+                </button>
+                <button
+                  className="secondary-button justify-center border-white/20 bg-white/10 text-white"
+                  disabled={isGeneratingImage}
+                  onClick={generateIllustration}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isGeneratingImage ? "Creating image..." : "Create illustration"}
                 </button>
                 <button className="secondary-button justify-center border-white/20 bg-white/10 text-white" onClick={shareStory}>
                   <Share2 className="h-4 w-4" /> Share story

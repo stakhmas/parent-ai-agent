@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { CUSTOM_CHALLENGE, challenges } from "@/lib/product";
 import { storyRequestSchema, type StoryPayload } from "@/lib/prompts";
+import { createIllustration } from "@/lib/illustrations";
 import { createStory } from "@/lib/story-engine";
 import {
   answerTelegramCallbackQuery,
   parseTelegramUpdate,
+  sendTelegramPhoto,
   sendTelegramMessage,
   type TelegramFrom,
   type TelegramInlineKeyboardMarkup
@@ -25,6 +27,10 @@ type TelegramSession = {
     | "length"
     | "done";
   payload: Partial<StoryPayload>;
+  lastStory?: {
+    title: string;
+    preview: string;
+  };
 };
 
 const inMemorySessions = new Map<number, TelegramSession>();
@@ -185,13 +191,24 @@ async function finishStory(chatId: number, session: TelegramSession) {
     chatId,
     text: `Сообщение для родителя:\n\n${parentMessage}\n\nЧтобы получить полную сказку, аудио и сохранить историю, нажмите кнопку ниже.`,
     replyMarkup: keyboard([
+      [{ text: "Получить картинку", callback_data: "illustration" }]
+    ])
+  });
+
+  await sendTelegramMessage({
+    chatId,
+    text: "Что хотите сделать дальше?",
+    replyMarkup: keyboard([
       [
         {
           text: "Открыть полную версию",
           url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/stories?source=telegram&storyId=${storyId ?? "preview"}`
         }
       ],
-      [{ text: "Создать новую сказку", callback_data: "restart" }]
+      [
+        { text: "Получить картинку", callback_data: "illustration" },
+        { text: "Создать новую сказку", callback_data: "restart" }
+      ]
     ])
   });
 
@@ -208,6 +225,10 @@ async function finishStory(chatId: number, session: TelegramSession) {
       ...parsed.data,
       age: String(parsed.data.age),
       parentEmail: parsed.data.parentEmail ?? ""
+    },
+    lastStory: {
+      title: result.title,
+      preview: result.preview
     }
   });
 }
@@ -286,6 +307,35 @@ async function handleCallback(chatId: number, callbackData: string, callbackId: 
 
   const session = getSession(chatId);
   const payload = { ...session.payload };
+
+  if (callbackData === "illustration") {
+    if (!session.lastStory || !payload.childName || !payload.challenge || !payload.favoriteHero || !payload.tone) {
+      await sendTelegramMessage({
+        chatId,
+        text: "Сначала создайте сказку, а потом я сделаю к ней картинку."
+      });
+      return;
+    }
+
+    await sendTelegramMessage({ chatId, text: "Создаю иллюстрацию к сказке..." });
+    const illustration = await createIllustration({
+      title: session.lastStory.title,
+      preview: session.lastStory.preview,
+      childName: payload.childName,
+      challenge: payload.challenge,
+      favoriteHero: payload.favoriteHero,
+      tone: payload.tone
+    });
+    await sendTelegramPhoto({
+      chatId,
+      photo: illustration.imageUrl,
+      caption:
+        illustration.mode === "mock"
+          ? "Иллюстрация-заглушка. Добавьте GEMINI_API_KEY, чтобы генерировать AI-картинки."
+          : "Иллюстрация к вашей сказке."
+    });
+    return;
+  }
 
   if (callbackData.startsWith("challenge:")) {
     const challenge = callbackData.replace("challenge:", "");

@@ -76,6 +76,45 @@ export async function sendTelegramMessage(options: SendMessageOptions) {
   return data;
 }
 
+type SendPhotoOptions = {
+  chatId: number;
+  photo: string;
+  caption?: string;
+  replyMarkup?: TelegramInlineKeyboardMarkup;
+};
+
+export async function sendTelegramPhoto(options: SendPhotoOptions) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+
+  if (!token) {
+    return {
+      ok: true,
+      mock: true,
+      chatId: options.chatId,
+      photo: options.photo,
+      caption: options.caption
+    };
+  }
+
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: options.chatId,
+      photo: options.photo,
+      caption: options.caption,
+      reply_markup: options.replyMarkup
+    })
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data?.description || "Telegram sendPhoto failed.");
+  }
+
+  return data;
+}
+
 export async function answerTelegramCallbackQuery(callbackQueryId: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
 

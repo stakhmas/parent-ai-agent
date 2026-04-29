@@ -48,12 +48,14 @@ AI Personal Fairy Tales is a mobile-first MVP for parents who want personalized 
    - `STRIPE_PREMIUM_PRICE_ID`
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_WEBHOOK_SECRET`
+   - `GEMINI_API_KEY`
 
 4. Run locally:
 
    `npm run dev`
 
 If OpenAI or Stripe keys are missing, the app runs in mock mode so the MVP can still be tested end-to-end.
+If `GEMINI_API_KEY` is missing, illustration generation returns a branded placeholder image and the exact prompt that would be sent to Gemini/Imagen.
 
 ## Telegram bot setup
 
